@@ -1,3 +1,14 @@
+import { useState, useEffect } from 'react'
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from 'recharts'
 import { usePoll } from '../hooks/usePoll'
 
 interface Portfolio {
@@ -22,6 +33,32 @@ interface Position {
   unrealized_plpc: number
   current_price: number
   avg_entry_price: number
+}
+
+interface EquityPoint {
+  t: string
+  v: number
+}
+
+interface EquityData {
+  period: string
+  portfolio: EquityPoint[]
+  spy: EquityPoint[]
+  error?: string
+}
+
+interface MomentumScore {
+  ticker: string
+  sector: string
+  momentum_score: number
+  r_1w: number
+  above_sma: boolean
+}
+
+interface MomentumData {
+  scores: MomentumScore[]
+  date: string | null
+  stale: boolean
 }
 
 function StatCard({
@@ -67,9 +104,60 @@ function SkeletonRow() {
   )
 }
 
+function MomentumCell({ score }: { score: MomentumScore }) {
+  const s = score.momentum_score ?? 0
+
+  let bgClass = ''
+  if (s > 5) bgClass = 'bg-green-900/60 border-green-700/40'
+  else if (s >= 0) bgClass = 'bg-green-900/30 border-green-800/30'
+  else if (s >= -5) bgClass = 'bg-red-900/30 border-red-800/30'
+  else bgClass = 'bg-red-900/60 border-red-700/40'
+
+  const smaAccent = score.above_sma ? 'border-l-2 border-l-green-400' : ''
+
+  const scoreColor = s > 0 ? 'text-green-400' : s < 0 ? 'text-red-400' : 'text-gray-400'
+  const r1wColor =
+    score.r_1w > 0 ? 'text-green-400' : score.r_1w < 0 ? 'text-red-400' : 'text-gray-400'
+  const r1wArrow = score.r_1w > 0 ? '▲' : score.r_1w < 0 ? '▼' : '—'
+
+  return (
+    <div
+      className={`border rounded-lg p-3 ${bgClass} ${smaAccent}`}
+    >
+      <div className="font-bold text-gray-100 text-base">{score.ticker}</div>
+      <div className="text-xs text-gray-500 truncate">{score.sector}</div>
+      <div className={`text-sm font-semibold mt-1 ${scoreColor}`}>
+        {s > 0 ? '+' : ''}{s.toFixed(1)}
+      </div>
+      <div className={`text-xs mt-0.5 ${r1wColor}`}>
+        {r1wArrow} {score.r_1w != null ? `${(score.r_1w * 100).toFixed(1)}%` : '—'} 1W
+      </div>
+    </div>
+  )
+}
+
+// Merge portfolio and spy arrays by date for recharts
+function mergeEquitySeries(portfolio: EquityPoint[], spy: EquityPoint[]) {
+  const map = new Map<string, { t: string; portfolio?: number; spy?: number }>()
+  for (const p of portfolio) {
+    map.set(p.t, { t: p.t, portfolio: p.v })
+  }
+  for (const s of spy) {
+    const date = s.t.slice(0, 10)
+    const existing = map.get(date)
+    if (existing) {
+      existing.spy = s.v
+    } else {
+      map.set(date, { t: date, spy: s.v })
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.t.localeCompare(b.t))
+}
+
 export default function Overview() {
   const portfolio = usePoll<Portfolio>('/api/portfolio', 60_000)
   const positions = usePoll<Position[]>('/api/positions', 60_000)
+  const momentum = usePoll<MomentumData>('/api/momentum', 3_600_000)
 
   const p = portfolio.data
   const pos = positions.data ?? []
@@ -77,6 +165,82 @@ export default function Overview() {
   const error = portfolio.error || positions.error
 
   const pdtMax = 3
+
+  // ── Equity Curve state ────────────────────────────────────────────────────
+  const [period, setPeriod] = useState('1M')
+  const [equityData, setEquityData] = useState<EquityData | null>(null)
+  const [equityLoading, setEquityLoading] = useState(true)
+
+  useEffect(() => {
+    setEquityLoading(true)
+    fetch(`/api/equity-curve?period=${period}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setEquityData(d)
+        setEquityLoading(false)
+      })
+      .catch(() => setEquityLoading(false))
+  }, [period])
+
+  const chartData = equityData
+    ? mergeEquitySeries(equityData.portfolio ?? [], equityData.spy ?? [])
+    : []
+
+  // ── Risk calculations ─────────────────────────────────────────────────────
+  const peakEquity =
+    equityData?.portfolio && equityData.portfolio.length > 0
+      ? Math.max(...equityData.portfolio.map((d) => d.v))
+      : null
+  const currentEquity = p?.portfolio_value ?? null
+  const drawdownPct =
+    peakEquity && currentEquity
+      ? ((currentEquity - peakEquity) / peakEquity) * 100
+      : null
+
+  const cash = p?.cash ?? 0
+  const portfolioValue = p?.portfolio_value ?? 1
+  const cashPct = portfolioValue > 0 ? (cash / portfolioValue) * 100 : 0
+
+  // Closest stop: for each position, buffer = ((current - entry) / entry) * 100 + 8
+  const closestStop =
+    pos.length > 0
+      ? pos
+          .map((h) => ({
+            ticker: h.symbol,
+            buffer: ((h.current_price - h.avg_entry_price) / h.avg_entry_price) * 100 + 8,
+          }))
+          .sort((a, b) => a.buffer - b.buffer)[0]
+      : null
+
+  // Drawdown color
+  let drawdownColor = 'text-green-400'
+  let drawdownBorder = ''
+  if (drawdownPct !== null) {
+    if (drawdownPct < -12) {
+      drawdownColor = 'text-red-400'
+      drawdownBorder = 'animate-pulse border-red-500'
+    } else if (drawdownPct < -10) {
+      drawdownColor = 'text-red-400'
+    } else if (drawdownPct < -5) {
+      drawdownColor = 'text-yellow-400'
+    }
+  }
+
+  // Cash color
+  let cashColor = 'text-green-400'
+  if (cashPct < 10) cashColor = 'text-red-400'
+  else if (cashPct < 15) cashColor = 'text-yellow-400'
+
+  // Stop color
+  let stopColor = 'text-gray-300'
+  if (closestStop) {
+    if (closestStop.buffer < 2) stopColor = 'text-red-400'
+    else if (closestStop.buffer < 4) stopColor = 'text-yellow-400'
+  }
+
+  const momentumScores = momentum.data?.scores ?? []
+  const momentumDate = momentum.data?.date
+  const momentumStale = momentum.data?.stale ?? true
 
   return (
     <div className="space-y-6">
@@ -127,6 +291,188 @@ export default function Overview() {
           accent={!p ? 'yellow' : p.day_trade_count >= pdtMax ? 'red' : 'yellow'}
           loading={loading}
         />
+      </div>
+
+      {/* ── AII-37: Risk Monitor ──────────────────────────────────────────── */}
+      <div className={`bg-gray-900 border border-gray-800 rounded-lg p-4 ${drawdownBorder}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-medium text-gray-300">Risk Monitor</h2>
+          <span className="text-xs text-gray-500">Circuit breaker: 12% drawdown</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {/* Drawdown */}
+          <div className="bg-gray-950/50 rounded-lg p-3">
+            <p className="text-xs text-gray-500 mb-1">Drawdown from Peak</p>
+            {loading ? (
+              <div className="h-6 w-20 bg-gray-800 rounded animate-pulse" />
+            ) : (
+              <p className={`text-lg font-semibold ${drawdownColor}`}>
+                {drawdownPct !== null ? `${drawdownPct.toFixed(1)}%` : '—'}
+              </p>
+            )}
+          </div>
+
+          {/* PDT Progress */}
+          <div className="bg-gray-950/50 rounded-lg p-3">
+            <p className="text-xs text-gray-500 mb-2">PDT Trades ({p?.day_trade_count ?? 0} / 3)</p>
+            <div className="w-full bg-gray-800 rounded-full h-2">
+              <div
+                style={{ width: `${Math.min(((p?.day_trade_count ?? 0) / 3) * 100, 100)}%` }}
+                className={`h-2 rounded-full ${(p?.day_trade_count ?? 0) >= 3 ? 'bg-red-500' : 'bg-yellow-400'}`}
+              />
+            </div>
+            <p className="text-xs text-gray-600 mt-1">rolling 5-day window</p>
+          </div>
+
+          {/* Cash Reserve */}
+          <div className="bg-gray-950/50 rounded-lg p-3">
+            <p className="text-xs text-gray-500 mb-1">Cash Reserve</p>
+            {loading ? (
+              <div className="h-6 w-20 bg-gray-800 rounded animate-pulse" />
+            ) : (
+              <>
+                <p className={`text-lg font-semibold ${cashColor}`}>
+                  {portfolioValue > 0 ? `${cashPct.toFixed(1)}%` : '—'}
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">target ≥ 10%</p>
+              </>
+            )}
+          </div>
+
+          {/* Closest Stop */}
+          <div className="bg-gray-950/50 rounded-lg p-3">
+            <p className="text-xs text-gray-500 mb-1">Closest Stop (8%)</p>
+            {loading ? (
+              <div className="h-6 w-24 bg-gray-800 rounded animate-pulse" />
+            ) : closestStop ? (
+              <p className={`text-sm font-semibold ${stopColor}`}>
+                {closestStop.ticker}: {closestStop.buffer.toFixed(1)}% to stop
+              </p>
+            ) : (
+              <p className="text-sm text-gray-600">No open positions</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── AII-36: Equity Curve ──────────────────────────────────────────── */}
+      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-medium text-gray-300">Equity Curve</h2>
+          <div className="flex gap-1">
+            {['1W', '1M', '3M', 'ALL'].map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`text-xs px-2 py-1 rounded transition-colors ${
+                  period === p
+                    ? 'bg-green-900/40 text-green-400'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {equityLoading ? (
+          <div className="h-64 flex items-center justify-center">
+            <div className="h-4 w-32 bg-gray-800 rounded animate-pulse" />
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="h-64 flex items-center justify-center text-sm text-gray-600">
+            No equity history available
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={chartData} margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+              <XAxis
+                dataKey="t"
+                tick={{ fill: '#6b7280', fontSize: 11 }}
+                tickFormatter={(v: string) => {
+                  const parts = v.split('-')
+                  return `${parts[1]}/${parts[2]}`
+                }}
+              />
+              <YAxis
+                tick={{ fill: '#6b7280', fontSize: 11 }}
+                tickFormatter={(v: number) => '$' + v.toLocaleString()}
+                width={80}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#111827',
+                  border: '1px solid #374151',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={(value: any, name: any) => {
+                  const num = value == null ? 0 : typeof value === 'number' ? value : Number(value)
+                  const label = typeof name === 'string' ? name : String(name)
+                  return [
+                    '$' + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    label,
+                  ]
+                }}
+                labelFormatter={(label) => String(label ?? '')}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }}
+                formatter={(value: string) =>
+                  value === 'portfolio' ? 'Portfolio' : 'SPY (normalized)'
+                }
+              />
+              <Line
+                type="monotone"
+                dataKey="portfolio"
+                stroke="#4ade80"
+                dot={false}
+                strokeWidth={2}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="spy"
+                stroke="#6b7280"
+                strokeDasharray="4 4"
+                dot={false}
+                strokeWidth={1.5}
+                connectNulls
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* ── AII-34: Sector Momentum Heatmap ──────────────────────────────── */}
+      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-medium text-gray-300">Sector Momentum</h2>
+          {momentumDate && (
+            <span className="text-xs text-gray-500">as of {momentumDate}</span>
+          )}
+        </div>
+
+        {momentumStale || momentumScores.length === 0 ? (
+          <p className="text-sm text-gray-600 py-4 text-center">
+            Momentum data will appear after first portfolio manager run.
+          </p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {momentumScores.map((score) => (
+                <MomentumCell key={score.ticker} score={score} />
+              ))}
+            </div>
+            {momentumDate && (
+              <p className="text-xs text-gray-600 mt-3">Last updated: {momentumDate}</p>
+            )}
+          </>
+        )}
       </div>
 
       {/* Wash sale tracker */}

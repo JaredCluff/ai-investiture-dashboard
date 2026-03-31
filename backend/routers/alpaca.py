@@ -163,6 +163,7 @@ async def get_trades():
             "symbol": o.get("symbol", ""),
             "side": o.get("side", ""),
             "qty": float(o.get("qty") or 0),
+            "notional": float(o["notional"]) if o.get("notional") else None,
             "filled_qty": float(o.get("filled_qty") or 0),
             "filled_avg_price": float(o["filled_avg_price"]) if o.get("filled_avg_price") else None,
             "order_type": o.get("order_type", ""),

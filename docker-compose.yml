@@ -14,6 +14,7 @@ services:
       PAPERCLIP_TOKEN: "${PAPERCLIP_TOKEN:-pcp_board_a403227daa3b2eeb9a689325bc0f6642162e2822cdf1f734}"
       PAPERCLIP_COMPANY_ID: "6299465e-f976-4dac-ba3d-a4dfb32f1a06"
       KN_RETRIEVAL_URL: "http://host.containers.internal:8003"
+      KN_INTERNAL_SERVICE_TOKEN: "${KN_INTERNAL_SERVICE_TOKEN}"
     volumes:
       - /Users/jared.cluff/.ai-investiture/agents:/data/agents:ro
       - /Users/jared.cluff/.ai-investiture/blog:/data/blog:ro

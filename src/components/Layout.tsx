@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { usePoll } from '../hooks/usePoll'
+import ActivityFeed from './ActivityFeed'
 
 interface NavItem {
   to: string
@@ -25,6 +27,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/org', label: 'Org Chart' },
       { to: '/tickets', label: 'Tickets' },
+      { to: '/messages', label: 'Messages' },
     ],
   },
   {
@@ -50,6 +53,7 @@ interface ApiStatus {
 }
 
 export default function Layout() {
+  const [activityOpen, setActivityOpen] = useState(false)
   const { data, error } = usePoll<ApiStatus>('/api/status', 30_000)
   const connected = !!data?.connected && !error
   const statusLabel = error ? 'Offline' : data ? (connected ? 'Live' : 'Error') : 'Connecting…'
@@ -103,6 +107,25 @@ export default function Layout() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
         <Outlet />
       </main>
+
+      {/* Activity Feed Drawer */}
+      <div className="border-t border-gray-800 bg-gray-900/50">
+        <button
+          onClick={() => setActivityOpen(o => !o)}
+          className="w-full px-4 py-2 flex items-center justify-between text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/30 transition-colors"
+        >
+          <span className="flex items-center gap-2">
+            <span className={`w-1.5 h-1.5 rounded-full ${activityOpen ? 'bg-green-400' : 'bg-gray-600'}`} />
+            Agent Activity Feed
+          </span>
+          <span>{activityOpen ? '▼' : '▲'}</span>
+        </button>
+        {activityOpen && (
+          <div className="h-48 border-t border-gray-800">
+            <ActivityFeed />
+          </div>
+        )}
+      </div>
 
       <footer className="border-t border-gray-800 py-3 text-center text-xs text-gray-600">
         AI-Investiture · Genkins Forge LLC · Not financial advice ·

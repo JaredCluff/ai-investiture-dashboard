@@ -2,6 +2,47 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import MarkdownRenderer from '../components/MarkdownRenderer'
 import Disclaimer from '../components/Disclaimer'
+import TradeCard from '../components/TradeCard'
+
+interface Trade {
+  ticker: string
+  action: 'BUY' | 'SELL'
+  sector?: string
+  momentumScore?: number
+  entryPrice?: number
+  stopLoss?: number
+  positionSize?: number
+  portfolioPct?: number
+  rationale?: string
+}
+
+interface ContentSegment {
+  type: 'markdown' | 'trade'
+  content: string | Trade
+}
+
+function parseTradeBlocks(content: string): { segments: ContentSegment[] } {
+  const segments: ContentSegment[] = []
+  const tradeBlockRegex = /```trade\n([\s\S]*?)```/g
+  let lastIndex = 0
+  let match
+  while ((match = tradeBlockRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: 'markdown', content: content.slice(lastIndex, match.index) })
+    }
+    try {
+      const trade = JSON.parse(match[1]) as Trade
+      segments.push({ type: 'trade', content: trade })
+    } catch {
+      segments.push({ type: 'markdown', content: match[0] })
+    }
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < content.length) {
+    segments.push({ type: 'markdown', content: content.slice(lastIndex) })
+  }
+  return { segments }
+}
 
 interface BlogPostDetail {
   slug: string
@@ -91,7 +132,11 @@ export default function BlogPost() {
             )}
           </div>
 
-          <MarkdownRenderer content={post.content} />
+          {parseTradeBlocks(post.content).segments.map((seg, i) =>
+            seg.type === 'trade'
+              ? <TradeCard key={i} trade={seg.content as Trade} />
+              : <MarkdownRenderer key={i} content={seg.content as string} />
+          )}
 
           <p className="text-xs text-gray-600 border-t border-gray-800 pt-4">
             Written by AI-Investiture Portfolio Manager. Not investment advice.

@@ -4,12 +4,19 @@ from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
+
+class SearchRequest(BaseModel):
+    query: str
+    limit: int = 10
 
 router = APIRouter(tags=["content"])
 
 AGENTS_DIR = Path(os.environ.get("AGENTS_DIR", "/data/agents"))
 BLOG_DIR = Path(os.environ.get("BLOG_DIR", "/data/blog"))
 KN_RETRIEVAL_URL = os.environ.get("KN_RETRIEVAL_URL", "http://localhost:8003")
+KN_INTERNAL_SERVICE_TOKEN = os.environ.get("KN_INTERNAL_SERVICE_TOKEN", "")
 
 DISCLAIMER_TEXT = "\n\n---\n*This is not investment advice. AI-Investiture manages its own proprietary capital only.*\n"
 
@@ -152,14 +159,43 @@ async def get_blog_post(slug: str):
 # ---------------------------------------------------------------------------
 
 @router.post("/search")
-async def search(query: str, limit: int = 10):
+async def search(body: SearchRequest):
+    query, limit = body.query, body.limit
+    if not query.strip():
+        return {"answer": None, "citations": [], "results": []}
+    headers = {
+        "Content-Type": "application/json",
+        "X-User-ID": "ai-investiture-backend",
+        "X-Internal-Service-Token": KN_INTERNAL_SERVICE_TOKEN,
+    }
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(
-                f"{KN_RETRIEVAL_URL}/search",
-                json={"query": query, "limit": limit}
+                f"{KN_RETRIEVAL_URL}/query/unified",
+                headers=headers,
+                json={
+                    "query": query,
+                    "max_results": limit,
+                    "generate_answer": True,
+                },
             )
             resp.raise_for_status()
-            return resp.json()
+            data = resp.json()
+            return {
+                "answer": data.get("answer") or None,
+                "answer_confidence": data.get("answer_confidence"),
+                "citations": data.get("citations", []),
+                "chunks": [
+                    {
+                        "title": c.get("title") or c.get("metadata", {}).get("title") or c.get("source", ""),
+                        "snippet": c.get("content", "")[:300],
+                        "source": c.get("source", ""),
+                        "score": c.get("score"),
+                    }
+                    for c in data.get("chunks", [])[:limit]
+                ],
+                "query_type": data.get("query_type"),
+                "processing_time_ms": data.get("processing_time_ms"),
+            }
     except httpx.HTTPError as e:
-        return {"error": str(e), "results": []}
+        return {"error": str(e), "answer": None, "citations": [], "chunks": []}

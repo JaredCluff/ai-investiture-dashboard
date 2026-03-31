@@ -12,6 +12,7 @@ import ResearchDetail from './pages/ResearchDetail'
 import Blog from './pages/Blog'
 import BlogPost from './pages/BlogPost'
 import Search from './pages/Search'
+import Messages from './pages/Messages'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="org" element={<OrgChart />} />
           <Route path="tickets" element={<Tickets />} />
           <Route path="tickets/:identifier" element={<TicketDetail />} />
+          <Route path="messages" element={<Messages />} />
           {/* Knowledge */}
           <Route path="research" element={<Research />} />
           <Route path="research/:id" element={<ResearchDetail />} />
