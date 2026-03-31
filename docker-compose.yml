@@ -11,16 +11,42 @@ services:
       - /Users/jared.cluff/.ai-investiture/.env
     environment:
       PAPERCLIP_URL: "http://host.containers.internal:3100"
-      PAPERCLIP_TOKEN: "${PAPERCLIP_TOKEN:-pcp_board_a403227daa3b2eeb9a689325bc0f6642162e2822cdf1f734}"
+      PAPERCLIP_TOKEN: "${PAPERCLIP_TOKEN}"
       PAPERCLIP_COMPANY_ID: "6299465e-f976-4dac-ba3d-a4dfb32f1a06"
       KN_RETRIEVAL_URL: "http://host.containers.internal:8003"
       KN_INTERNAL_SERVICE_TOKEN: "${KN_INTERNAL_SERVICE_TOKEN}"
     volumes:
+      # :ro — read-only mounts; container cannot write back to host filesystem
       - /Users/jared.cluff/.ai-investiture/agents:/data/agents:ro
       - /Users/jared.cluff/.ai-investiture/blog:/data/blog:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8385/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aii-net
+
+  # PR agent — Spark public-facing chat service
+  aii-pr-agent:
+    build:
+      context: ./pr-agent
+      dockerfile: Containerfile
+    container_name: aii-pr-agent
+    ports:
+      - "127.0.0.1:8390:8390"
+    env_file:
+      - /Users/jared.cluff/.ai-investiture/.env
+    environment:
+      NATS_URL: "nats://host.containers.internal:14222"
+      KN_SEARCH_URL: "http://host.containers.internal:8003"
+      BACKEND_URL: "http://aii-backend:8385"
+    volumes:
+      - pr-agent-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8390/chat/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -39,6 +65,7 @@ services:
     restart: unless-stopped
     depends_on:
       - aii-backend
+      - aii-pr-agent
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
@@ -46,6 +73,9 @@ services:
       retries: 3
     networks:
       - aii-net
+
+volumes:
+  pr-agent-data:
 
 networks:
   aii-net:

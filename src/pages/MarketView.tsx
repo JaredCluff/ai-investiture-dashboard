@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { apiFetch } from '../lib/api'
 import {
   ResponsiveContainer,
   AreaChart,
@@ -97,7 +98,7 @@ export default function MarketView() {
 
   // Fetch positions on mount
   useEffect(() => {
-    fetch('/api/positions')
+    apiFetch('/api/positions')
       .then((r) => r.json())
       .then((d) => setPositions(Array.isArray(d) ? d : []))
       .catch(() => {})
@@ -107,7 +108,7 @@ export default function MarketView() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    fetch(`/api/bars/${symbol}?period=${period}`)
+    apiFetch(`/api/bars/${symbol}?period=${period}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json()
@@ -125,13 +126,13 @@ export default function MarketView() {
   const bars = barsData?.bars ?? []
 
   // Stats
-  const lastBar = bars[bars.length - 1]
-  const prevBar = bars[bars.length - 2]
+  const lastBar = bars.length > 0 ? bars[bars.length - 1] : undefined
+  const prevBar = bars.length > 1 ? bars[bars.length - 2] : undefined
   const currentPrice = lastBar?.c ?? null
-  const dayChange = currentPrice && prevBar ? currentPrice - prevBar.c : null
-  const dayChangePct = dayChange && prevBar ? (dayChange / prevBar.c) * 100 : null
-  const high52 = bars.length > 0 ? Math.max(...bars.map((b) => b.h)) : null
-  const low52 = bars.length > 0 ? Math.min(...bars.map((b) => b.l)) : null
+  const dayChange = currentPrice !== null && prevBar !== undefined ? currentPrice - prevBar.c : null
+  const dayChangePct = dayChange !== null && prevBar !== undefined && prevBar.c !== 0 ? (dayChange / prevBar.c) * 100 : null
+  const high52 = bars.length > 0 ? Math.max(...bars.map((b) => b.h ?? 0)) : null
+  const low52 = bars.length > 0 ? Math.min(...bars.map((b) => b.l ?? Infinity)) : null
 
   // Entry price for current symbol if held
   const holding = positions.find((p) => p.symbol === symbol)

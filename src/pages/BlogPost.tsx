@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import MarkdownRenderer from '../components/MarkdownRenderer'
 import Disclaimer from '../components/Disclaimer'
 import TradeCard from '../components/TradeCard'
+import { apiFetch } from '../lib/api'
 
 interface Trade {
   ticker: string
@@ -63,7 +64,7 @@ export default function BlogPost() {
     if (!slug) return
     setLoading(true)
     setError(null)
-    fetch(`/api/blog/${encodeURIComponent(slug)}`)
+    apiFetch(`/api/blog/${encodeURIComponent(slug)}`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json() as Promise<BlogPostDetail>

@@ -5,7 +5,7 @@ from typing import Any
 STRIP_FIELDS = {
     "adapterConfig", "runtimeConfig", "budgetMonthlyCents", "spentMonthlyCents",
     "apiKey", "apiSecret", "token", "secret", "key", "password", "credential",
-    "accessToken", "refreshToken", "webhookSecret",
+    "accessToken", "refreshToken", "webhookSecret", "authorization", "bearerToken",
 }
 
 # Regex patterns to redact from string values
@@ -24,7 +24,7 @@ def redact(obj: Any) -> Any:
         return {
             k: redact(v)
             for k, v in obj.items()
-            if k not in STRIP_FIELDS and not any(pat in k.lower() for pat in ['token', 'secret', 'key', 'password', 'credential'])
+            if k not in STRIP_FIELDS and not any(pat in k.lower() for pat in ['token', 'secret', 'key', 'password', 'credential', 'auth', 'bearer'])
         }
     elif isinstance(obj, list):
         return [redact(item) for item in obj]

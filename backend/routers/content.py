@@ -92,6 +92,8 @@ async def list_research():
 
 @router.get("/research/{report_id}")
 async def get_research(report_id: str):
+    if not re.match(r'^[a-zA-Z0-9_\-]+$', report_id):
+        raise HTTPException(status_code=400, detail="Invalid report ID")
     if AGENTS_DIR.exists():
         for agent_dir in AGENTS_DIR.iterdir():
             if agent_dir.is_dir():
@@ -197,5 +199,5 @@ async def search(body: SearchRequest):
                 "query_type": data.get("query_type"),
                 "processing_time_ms": data.get("processing_time_ms"),
             }
-    except httpx.HTTPError as e:
-        return {"error": str(e), "answer": None, "citations": [], "chunks": []}
+    except httpx.HTTPError:
+        return {"error": "Search service unavailable", "answer": None, "citations": [], "chunks": []}

@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Query
@@ -15,6 +16,7 @@ def _auth():
 
 # Simple in-memory cache
 _equity_cache: dict = {}
+_equity_lock = asyncio.Lock()
 _CACHE_TTL = 3600  # 1 hour
 
 def _cached(key: str, ttl: int = _CACHE_TTL):
@@ -98,4 +100,6 @@ async def get_equity_curve(period: str = Query(default="1M")):
         ],
         "spy": spy_normalized,
     }
-    return _store(cache_key, result)
+    async with _equity_lock:
+        _store(cache_key, result)
+    return result

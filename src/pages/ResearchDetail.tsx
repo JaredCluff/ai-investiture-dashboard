@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import MarkdownRenderer from '../components/MarkdownRenderer'
+import { apiFetch } from '../lib/api'
 
 interface ReportDetail {
   id: string
@@ -21,7 +22,7 @@ export default function ResearchDetail() {
     if (!id) return
     setLoading(true)
     setError(null)
-    fetch(`/api/research/${encodeURIComponent(id)}`)
+    apiFetch(`/api/research/${encodeURIComponent(id)}`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json() as Promise<ReportDetail>

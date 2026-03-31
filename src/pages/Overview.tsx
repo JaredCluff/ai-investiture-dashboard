@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { apiFetch } from '../lib/api'
 import {
   ResponsiveContainer,
   LineChart,
@@ -166,7 +167,7 @@ function PositionSparkline({ symbol, entryPrice }: { symbol: string; entryPrice:
   const [bars, setBars] = useState<SparkBar[]>([])
 
   useEffect(() => {
-    fetch(`/api/bars/${symbol}?period=1M`)
+    apiFetch(`/api/bars/${symbol}?period=1M`)
       .then((r) => r.json())
       .then((d) => setBars(d.bars ?? []))
       .catch(() => {})
@@ -223,7 +224,7 @@ export default function Overview() {
 
   useEffect(() => {
     setEquityLoading(true)
-    fetch(`/api/equity-curve?period=${period}`)
+    apiFetch(`/api/equity-curve?period=${period}`)
       .then((r) => r.json())
       .then((d) => {
         setEquityData(d)
