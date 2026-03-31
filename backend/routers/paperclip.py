@@ -135,7 +135,7 @@ async def get_ticket(identifier: str):
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                f"{_paperclip_url()}/api/companies/{_company_id()}/issues/{issue_id}",
+                f"{_paperclip_url()}/api/issues/{issue_id}",
                 headers=_paperclip_headers(),
                 timeout=10.0,
             )
@@ -157,7 +157,7 @@ async def get_ticket_comments(identifier: str):
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                f"{_paperclip_url()}/api/companies/{_company_id()}/issues/{issue_id}/comments",
+                f"{_paperclip_url()}/api/issues/{issue_id}/comments",
                 headers=_paperclip_headers(),
                 timeout=10.0,
             )
