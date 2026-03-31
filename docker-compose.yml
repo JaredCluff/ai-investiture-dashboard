@@ -1,0 +1,15 @@
+services:
+  dashboard:
+    image: nginx:alpine
+    container_name: ai-investiture-dashboard
+    ports:
+      - "8384:80"
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
