@@ -8,6 +8,9 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  AreaChart,
+  Area,
+  ReferenceLine,
 } from 'recharts'
 import { usePoll } from '../hooks/usePoll'
 
@@ -152,6 +155,53 @@ function mergeEquitySeries(portfolio: EquityPoint[], spy: EquityPoint[]) {
     }
   }
   return Array.from(map.values()).sort((a, b) => a.t.localeCompare(b.t))
+}
+
+interface SparkBar {
+  t: string
+  c: number
+}
+
+function PositionSparkline({ symbol, entryPrice }: { symbol: string; entryPrice: number }) {
+  const [bars, setBars] = useState<SparkBar[]>([])
+
+  useEffect(() => {
+    fetch(`/api/bars/${symbol}?period=1M`)
+      .then((r) => r.json())
+      .then((d) => setBars(d.bars ?? []))
+      .catch(() => {})
+  }, [symbol])
+
+  if (bars.length < 2) {
+    return <div className="w-24 h-8 bg-gray-800 rounded animate-pulse" />
+  }
+
+  const lastClose = bars[bars.length - 1]?.c ?? entryPrice
+  const color = lastClose >= entryPrice ? '#4ade80' : '#f87171'
+  const gradId = `sg_${symbol}`
+
+  return (
+    <ResponsiveContainer width={96} height={32}>
+      <AreaChart data={bars} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+            <stop offset="95%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <ReferenceLine y={entryPrice} stroke="#fbbf24" strokeWidth={0.5} />
+        <Area
+          type="monotone"
+          dataKey="c"
+          stroke={color}
+          strokeWidth={1}
+          fill={`url(#${gradId})`}
+          dot={false}
+          isAnimationActive={false}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  )
 }
 
 export default function Overview() {
@@ -523,6 +573,7 @@ export default function Overview() {
                 <th className="text-right px-4 py-2">Mkt Value</th>
                 <th className="text-right px-4 py-2">Avg Entry</th>
                 <th className="text-right px-4 py-2">Unrealized P&amp;L</th>
+                <th className="text-right px-4 py-2">1M Chart</th>
               </tr>
             </thead>
             <tbody>
@@ -541,6 +592,11 @@ export default function Overview() {
                     <span className="ml-1 text-xs opacity-70">
                       ({h.unrealized_plpc >= 0 ? '+' : ''}{h.unrealized_plpc.toFixed(2)}%)
                     </span>
+                  </td>
+                  <td className="text-right px-4 py-2">
+                    <div className="flex justify-end">
+                      <PositionSparkline symbol={h.symbol} entryPrice={h.avg_entry_price} />
+                    </div>
                   </td>
                 </tr>
               ))}

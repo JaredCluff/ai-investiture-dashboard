@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 load_dotenv(os.path.expanduser("~/.ai-investiture/.env"))
 
 from routers import alpaca, content, paperclip, search  # noqa: E402
-from routers import equity, momentum, activity, messages  # noqa: E402
+from routers import equity, momentum, activity, messages, bars  # noqa: E402
 
 app = FastAPI(title="AI-Investiture Backend")
 
@@ -28,6 +28,7 @@ app.include_router(equity.router, prefix="/api")
 app.include_router(momentum.router, prefix="/api")
 app.include_router(activity.router, prefix="/api")
 app.include_router(messages.router, prefix="/api")
+app.include_router(bars.router, prefix="/api")
 
 
 @app.get("/api/health")
