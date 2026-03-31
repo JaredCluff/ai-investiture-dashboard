@@ -1,10 +1,34 @@
 import os
+from datetime import datetime, timezone
 
 import httpx
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
 from services.redactor import redact
+
+
+def _normalize_agent_status(agent: dict) -> str:
+    """Map raw Paperclip agent status to display status using heartbeat recency."""
+    raw_status = agent.get("status", "offline")
+    heartbeat = agent.get("lastHeartbeatAt")
+
+    if heartbeat:
+        try:
+            hb_dt = datetime.fromisoformat(heartbeat.replace("Z", "+00:00"))
+            age_seconds = (datetime.now(timezone.utc) - hb_dt).total_seconds()
+            if age_seconds < 300:
+                return "active"
+            if age_seconds < 3600:
+                return "idle"
+            return "offline"
+        except (ValueError, TypeError):
+            pass
+
+    # No heartbeat — treat "error" as "offline" (session exited normally)
+    if raw_status == "error":
+        return "offline"
+    return raw_status
 
 router = APIRouter()
 
@@ -46,7 +70,12 @@ async def get_org():
                 timeout=10.0,
             )
         resp.raise_for_status()
-        agents = redact(resp.json())
+        raw_agents = resp.json()
+        agents = redact(raw_agents)
+        # Re-apply status normalization after redaction (redact may strip heartbeat)
+        if isinstance(agents, list) and isinstance(raw_agents, list):
+            for agent, raw in zip(agents, raw_agents):
+                agent["status"] = _normalize_agent_status(raw)
     except httpx.HTTPError as e:
         return JSONResponse({"error": str(e), "source": "paperclip"}, status_code=502)
 
