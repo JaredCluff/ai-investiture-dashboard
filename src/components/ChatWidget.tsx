@@ -11,7 +11,6 @@ type Phase = 'loading' | 'register' | 'chat'
 export default function ChatWidget() {
   const [open, setOpen] = useState(false)
   const [phase, setPhase] = useState<Phase>('loading')
-  const [userName, setUserName] = useState('')
 
   // Registration form
   const [regName, setRegName] = useState('')
@@ -96,7 +95,6 @@ export default function ChatWidget() {
         setRegError(data.detail ?? 'Registration failed.')
         return
       }
-      setUserName(data.name ?? name)
       setMessages([])
       setPhase('chat')
     } catch {
