@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # Load credentials before any router imports touch os.environ
 load_dotenv(os.path.expanduser("~/.ai-investiture/.env"))
 
-from routers import alpaca, paperclip  # noqa: E402
+from routers import alpaca, content, paperclip  # noqa: E402
 
 app = FastAPI(title="AI-Investiture Backend")
 
@@ -21,6 +21,7 @@ app.add_middleware(
 
 app.include_router(alpaca.router, prefix="/api")
 app.include_router(paperclip.router, prefix="/api")
+app.include_router(content.router, prefix="/api")
 
 
 @app.get("/api/health")

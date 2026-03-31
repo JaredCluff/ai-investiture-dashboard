@@ -17,8 +17,6 @@ services:
     volumes:
       - /Users/jared.cluff/.ai-investiture/agents:/data/agents:ro
       - /Users/jared.cluff/.ai-investiture/blog:/data/blog:ro
-    extra_hosts:
-      - "host.containers.internal:host-gateway"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8385/api/health')"]
