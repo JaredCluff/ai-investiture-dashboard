@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Query, HTTPException
@@ -16,6 +17,7 @@ def _auth():
 
 # In-memory cache
 _bars_cache: dict = {}
+_bars_lock = asyncio.Lock()
 _CACHE_TTL = 300  # 5 min for intraday, 1h for daily
 
 
@@ -81,4 +83,6 @@ async def get_bars(symbol: str, period: str = Query(default="1M")):
             for b in bars
         ],
     }
-    return _set_cache(cache_key, result, ttl)
+    async with _bars_lock:
+        _set_cache(cache_key, result, ttl)
+    return result

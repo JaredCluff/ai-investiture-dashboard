@@ -1,4 +1,6 @@
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeSanitize from 'rehype-sanitize'
 
 interface Props {
   content: string
@@ -25,7 +27,7 @@ export default function MarkdownRenderer({ content, className = '' }: Props) {
       [&_table]:w-full [&_table]:text-sm [&_table]:border-collapse
       [&_th]:text-left [&_th]:text-gray-400 [&_th]:border-b [&_th]:border-gray-700 [&_th]:pb-2
       [&_td]:text-gray-300 [&_td]:border-b [&_td]:border-gray-800 [&_td]:py-2`}>
-      <ReactMarkdown>{content}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>{content}</ReactMarkdown>
     </div>
   )
 }

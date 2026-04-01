@@ -1,7 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 # Load credentials before any router imports touch os.environ
@@ -14,11 +14,29 @@ app = FastAPI(title="AI-Investiture Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "http://localhost:8384",
+        "http://localhost:5173",
+        "https://investments.knowledgenexus.ai",
+    ],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
+
+_DASHBOARD_API_KEY = os.environ.get("DASHBOARD_API_KEY", "")
+
+@app.middleware("http")
+async def api_key_middleware(request: Request, call_next) -> Response:
+    """Require X-API-Key header on all /api/ routes except health."""
+    if _DASHBOARD_API_KEY and request.url.path.startswith("/api/") and request.method not in ("GET", "HEAD", "OPTIONS"):
+        key = request.headers.get("X-API-Key", "")
+        if key != _DASHBOARD_API_KEY:
+            return Response(
+                content='{"detail":"Unauthorized"}',
+                status_code=401,
+                media_type="application/json",
+            )
+    return await call_next(request)
 
 app.include_router(alpaca.router, prefix="/api")
 app.include_router(paperclip.router, prefix="/api")

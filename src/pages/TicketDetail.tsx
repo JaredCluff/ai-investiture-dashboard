@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import StatusBadge from '../components/StatusBadge'
 import MarkdownRenderer from '../components/MarkdownRenderer'
+import { apiFetch } from '../lib/api'
 
 interface Ticket {
   identifier: string
@@ -42,11 +43,11 @@ export default function TicketDetail() {
     setError(null)
 
     Promise.all([
-      fetch(`/api/tickets/${identifier}`).then((r) => {
+      apiFetch(`/api/tickets/${identifier}`).then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json() as Promise<Ticket>
       }),
-      fetch(`/api/tickets/${identifier}/comments`).then((r) => {
+      apiFetch(`/api/tickets/${identifier}/comments`).then((r) => {
         if (!r.ok) return [] as Comment[]
         return r.json() as Promise<Comment[]>
       }),

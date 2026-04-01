@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import MarkdownRenderer from '../components/MarkdownRenderer'
+import { apiFetch } from '../lib/api'
 
 interface SearchResult {
   title?: string
@@ -42,7 +43,7 @@ export default function Search() {
     setSearching(true)
     setResponse(null)
     try {
-      const res = await fetch(`/api/search?query=${encodeURIComponent(q)}&limit=10`, {
+      const res = await apiFetch(`/api/search?query=${encodeURIComponent(q)}&limit=10`, {
         method: 'POST',
       })
       const data: SearchResponse = await res.json()

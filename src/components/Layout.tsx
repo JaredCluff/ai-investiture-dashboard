@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { usePoll } from '../hooks/usePoll'
 import ActivityFeed from './ActivityFeed'
+import ChatWidget from './ChatWidget'
 
 interface NavItem {
   to: string
@@ -126,6 +127,8 @@ export default function Layout() {
           </div>
         )}
       </div>
+
+      <ChatWidget />
 
       <footer className="border-t border-gray-800 py-3 text-center text-xs text-gray-600">
         AI-Investiture · Genkins Forge LLC · Not financial advice ·
