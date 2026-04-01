@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 from pathlib import Path
@@ -73,7 +74,7 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
 
 
 async def _index_to_kn(title: str, content: str, source: str, metadata: dict) -> None:
-    """Fire-and-forget: index a document into Knowledge Nexus."""
+    """Index a document into Knowledge Nexus. Intended to be called via asyncio.create_task — never awaited directly from GET endpoints."""
     if not KN_INTERNAL_SERVICE_TOKEN:
         return
     headers = {
@@ -169,7 +170,7 @@ async def get_research(report_id: str):
                     if parsed:
                         text = md_file.read_text(encoding="utf-8")
                         parsed["content"] = text
-                        await _index_to_kn(
+                        asyncio.create_task(_index_to_kn(
                             title=parsed["title"],
                             content=text,
                             source=f"research/{report_id}",
@@ -178,7 +179,7 @@ async def get_research(report_id: str):
                                 "author_role": parsed["author_role"],
                                 "date": parsed.get("date"),
                             },
-                        )
+                        ))
                         return parsed
     raise HTTPException(status_code=404, detail="Report not found")
 
@@ -220,7 +221,7 @@ async def get_blog_post(slug: str):
             meta, body = parse_frontmatter(text)
             if "not investment advice" not in body.lower():
                 body += DISCLAIMER_TEXT
-            await _index_to_kn(
+            asyncio.create_task(_index_to_kn(
                 title=meta.get("title", safe_slug),
                 content=body,
                 source=f"blog/{safe_slug}",
@@ -230,7 +231,7 @@ async def get_blog_post(slug: str):
                     "author": meta.get("author", "Portfolio Manager"),
                     "tags": [t.strip() for t in meta.get("tags", "").split(",") if t.strip()],
                 },
-            )
+            ))
             return {
                 "slug": safe_slug,
                 "title": meta.get("title", safe_slug),
