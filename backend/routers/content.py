@@ -17,6 +17,7 @@ AGENTS_DIR = Path(os.environ.get("AGENTS_DIR", "/data/agents"))
 BLOG_DIR = Path(os.environ.get("BLOG_DIR", "/data/blog"))
 KN_RETRIEVAL_URL = os.environ.get("KN_RETRIEVAL_URL", "http://localhost:8003")
 KN_INTERNAL_SERVICE_TOKEN = os.environ.get("KN_INTERNAL_SERVICE_TOKEN", "")
+KN_INGESTION_URL = os.environ.get("KN_INGESTION_URL", "http://host.containers.internal:8004")
 
 DISCLAIMER_TEXT = "\n\n---\n*This is not investment advice. AI-Investiture manages its own proprietary capital only.*\n"
 
@@ -71,6 +72,26 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
     return meta, body
 
 
+async def _index_to_kn(title: str, content: str, source: str, metadata: dict) -> None:
+    """Fire-and-forget: index a document into Knowledge Nexus."""
+    if not KN_INTERNAL_SERVICE_TOKEN:
+        return
+    headers = {
+        "Content-Type": "application/json",
+        "X-User-ID": "ai-investiture-backend",
+        "X-Internal-Service-Token": KN_INTERNAL_SERVICE_TOKEN,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.post(
+                f"{KN_INGESTION_URL}/research/ingest",
+                headers=headers,
+                json={"title": title, "content": content, "source": source, "metadata": metadata},
+            )
+    except Exception:
+        pass  # best-effort, never block the response
+
+
 # ---------------------------------------------------------------------------
 # Research endpoints
 # ---------------------------------------------------------------------------
@@ -90,6 +111,51 @@ async def list_research():
     return reports
 
 
+@router.post("/research/index-all")
+async def index_all_research():
+    """Index all research files and blog posts into Knowledge Nexus."""
+    indexed = []
+    errors = []
+
+    if AGENTS_DIR.exists():
+        for agent_dir in AGENTS_DIR.iterdir():
+            if agent_dir.is_dir():
+                for md_file in agent_dir.glob("AII-*.md"):
+                    parsed = parse_research_file(md_file, agent_dir.name)
+                    if parsed:
+                        try:
+                            await _index_to_kn(
+                                title=parsed["title"],
+                                content=md_file.read_text(encoding="utf-8"),
+                                source=f"research/{md_file.stem}",
+                                metadata={
+                                    "report_id": md_file.stem,
+                                    "author_role": parsed["author_role"],
+                                    "date": parsed.get("date"),
+                                },
+                            )
+                            indexed.append(md_file.stem)
+                        except Exception as e:
+                            errors.append({"file": md_file.stem, "error": str(e)})
+
+    if BLOG_DIR.exists():
+        for md_file in BLOG_DIR.glob("*.md"):
+            try:
+                text = md_file.read_text(encoding="utf-8")
+                meta, body = parse_frontmatter(text)
+                await _index_to_kn(
+                    title=meta.get("title", md_file.stem),
+                    content=body,
+                    source=f"blog/{md_file.stem}",
+                    metadata={"slug": md_file.stem, "date": meta.get("date")},
+                )
+                indexed.append(f"blog/{md_file.stem}")
+            except Exception as e:
+                errors.append({"file": str(md_file), "error": str(e)})
+
+    return {"indexed": indexed, "errors": errors}
+
+
 @router.get("/research/{report_id}")
 async def get_research(report_id: str):
     if not re.match(r'^[a-zA-Z0-9_\-]+$', report_id):
@@ -101,7 +167,18 @@ async def get_research(report_id: str):
                 if md_file.exists():
                     parsed = parse_research_file(md_file, agent_dir.name)
                     if parsed:
-                        parsed["content"] = md_file.read_text(encoding="utf-8")
+                        text = md_file.read_text(encoding="utf-8")
+                        parsed["content"] = text
+                        await _index_to_kn(
+                            title=parsed["title"],
+                            content=text,
+                            source=f"research/{report_id}",
+                            metadata={
+                                "report_id": report_id,
+                                "author_role": parsed["author_role"],
+                                "date": parsed.get("date"),
+                            },
+                        )
                         return parsed
     raise HTTPException(status_code=404, detail="Report not found")
 
@@ -135,16 +212,25 @@ async def list_blog():
 
 @router.get("/blog/{slug}")
 async def get_blog_post(slug: str):
-    # Sanitize slug to prevent path traversal
     safe_slug = re.sub(r'[^a-zA-Z0-9_\-]', '', slug)
     if BLOG_DIR.exists():
         md_file = BLOG_DIR / f"{safe_slug}.md"
         if md_file.exists():
             text = md_file.read_text(encoding="utf-8")
             meta, body = parse_frontmatter(text)
-            # Auto-inject disclaimer if not present
             if "not investment advice" not in body.lower():
                 body += DISCLAIMER_TEXT
+            await _index_to_kn(
+                title=meta.get("title", safe_slug),
+                content=body,
+                source=f"blog/{safe_slug}",
+                metadata={
+                    "slug": safe_slug,
+                    "date": meta.get("date"),
+                    "author": meta.get("author", "Portfolio Manager"),
+                    "tags": [t.strip() for t in meta.get("tags", "").split(",") if t.strip()],
+                },
+            )
             return {
                 "slug": safe_slug,
                 "title": meta.get("title", safe_slug),
