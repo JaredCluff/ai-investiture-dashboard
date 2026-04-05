@@ -46,9 +46,10 @@ async def get_bars(symbol: str, period: str = Query(default="1M")):
     """OHLCV bars for a symbol from Alpaca data API."""
     symbol = symbol.upper()
     cache_key = f"bars_{symbol}_{period}"
-    cached = _get_cache(cache_key)
-    if cached:
-        return cached
+    async with _bars_lock:
+        cached = _get_cache(cache_key)
+        if cached:
+            return cached
 
     timeframe_str, delta = TIMEFRAME_MAP.get(period, ("1Day", timedelta(days=30)))
     end = datetime.now(timezone.utc)

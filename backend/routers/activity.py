@@ -1,6 +1,6 @@
 import os
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from services.redactor import redact
 
 router = APIRouter(tags=["activity"])
@@ -17,7 +17,7 @@ AGENT_NAME_MAP = {
 }
 
 @router.get("/activity")
-async def get_activity(limit: int = 20):
+async def get_activity(limit: int = Query(default=20, ge=1, le=200)):
     """Recent agent actions from Paperclip ticket updates."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:

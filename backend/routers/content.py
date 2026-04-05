@@ -5,12 +5,12 @@ from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class SearchRequest(BaseModel):
     query: str
-    limit: int = 10
+    limit: int = Field(default=10, ge=1, le=100)
 
 router = APIRouter(tags=["content"])
 
