@@ -30,7 +30,7 @@ _INJECTION_PATTERNS = [
 _INJECTION_RES = [re.compile(p, re.IGNORECASE) for p in _INJECTION_PATTERNS]
 
 _OUTPUT_BLOCK_PATTERNS = [
-    re.compile(r"[A-Z0-9]{20,}"),                      # Possible API key
+    re.compile(r"(?:sk-|pcp_|APCA-)[A-Za-z0-9]{20,}"), # API key with known prefix
     re.compile(r"pcp_[a-z0-9_]+"),                     # Paperclip token
     re.compile(r"nats://"),                             # NATS URL
     re.compile(r"localhost:\d+"),                       # Internal port

@@ -95,6 +95,8 @@ _rate_buckets: dict[str, list[datetime]] = defaultdict(list)
 def check_rate_limit(session_id: str) -> tuple[bool, str]:
     now = datetime.now(timezone.utc)
     stamps = [ts for ts in _rate_buckets[session_id] if now - ts < timedelta(days=1)]
+    if not stamps:
+        _rate_buckets.pop(session_id, None)
 
     per_min = sum(1 for ts in stamps if now - ts < timedelta(minutes=1))
     per_hr = sum(1 for ts in stamps if now - ts < timedelta(hours=1))
