@@ -2,9 +2,10 @@ import os
 from datetime import datetime, timezone
 
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
+from routers.paperclip import _require_board_auth
 from services.cache import alpaca_cache
 
 router = APIRouter()
@@ -26,7 +27,7 @@ def _now_iso() -> str:
 
 
 @router.get("/status")
-async def get_status():
+async def get_status(_: None = Depends(_require_board_auth)):
     cache_key = "alpaca:status"
     cached = alpaca_cache.get(cache_key)
     if cached is not None:
@@ -60,7 +61,7 @@ async def get_status():
 
 
 @router.get("/portfolio")
-async def get_portfolio():
+async def get_portfolio(_: None = Depends(_require_board_auth)):
     cache_key = "alpaca:portfolio"
     cached = alpaca_cache.get(cache_key)
     if cached is not None:
@@ -100,7 +101,7 @@ async def get_portfolio():
 
 
 @router.get("/positions")
-async def get_positions():
+async def get_positions(_: None = Depends(_require_board_auth)):
     cache_key = "alpaca:positions"
     cached = alpaca_cache.get(cache_key)
     if cached is not None:
@@ -138,7 +139,7 @@ async def get_positions():
 
 
 @router.get("/trades")
-async def get_trades():
+async def get_trades(_: None = Depends(_require_board_auth)):
     cache_key = "alpaca:trades"
     cached = alpaca_cache.get(cache_key)
     if cached is not None:
@@ -179,7 +180,7 @@ async def get_trades():
 
 
 @router.get("/account/history")
-async def get_account_history():
+async def get_account_history(_: None = Depends(_require_board_auth)):
     cache_key = "alpaca:account_history"
     cached = alpaca_cache.get(cache_key)
     if cached is not None:
