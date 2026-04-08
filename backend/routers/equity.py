@@ -33,9 +33,10 @@ def _store(key: str, data):
 async def get_equity_curve(period: str = Query(default="1M")):
     """Portfolio history + SPY benchmark, normalized to same start value."""
     cache_key = f"equity_{period}"
-    cached = _cached(cache_key)
-    if cached:
-        return cached
+    async with _equity_lock:
+        cached = _cached(cache_key)
+        if cached:
+            return cached
 
     # Map UI period to Alpaca period param
     period_map = {"1W": "1W", "1M": "1M", "3M": "3M", "ALL": "6M"}
