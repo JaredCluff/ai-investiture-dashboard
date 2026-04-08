@@ -120,5 +120,5 @@ async def search(query: str = Query(..., min_length=1), limit: int = Query(defau
             "total": len(results),
             "engine": "local-fulltext",
         }
-    except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
+    except Exception:
+        return JSONResponse({"error": "An internal error occurred while searching."}, status_code=500)

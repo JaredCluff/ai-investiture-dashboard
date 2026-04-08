@@ -1,7 +1,8 @@
 import os
 import httpx
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from services.redactor import redact
+from routers.paperclip import _require_board_auth
 
 router = APIRouter(tags=["activity"])
 
@@ -17,7 +18,7 @@ AGENT_NAME_MAP = {
 }
 
 @router.get("/activity")
-async def get_activity(limit: int = Query(default=20, ge=1, le=200)):
+async def get_activity(limit: int = Query(default=20, ge=1, le=200), _: None = Depends(_require_board_auth)):
     """Recent agent actions from Paperclip ticket updates."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -44,13 +45,13 @@ async def get_activity(limit: int = Query(default=20, ge=1, le=200)):
             # Map common patterns
             if "AII-" in identifier:
                 num = int(identifier.split("-")[1]) if identifier.split("-")[1].isdigit() else 0
-                if num in range(18, 35):
-                    agent = "Engineer"
+                if num in range(1, 9):
+                    agent = "CTO"
                 elif num in range(9, 18):
                     agent = "Researcher"
-                elif num in range(1, 9):
-                    agent = "CTO"
-                elif num >= 31:
+                elif num in range(18, 31):
+                    agent = "Engineer"
+                else:
                     agent = "Portfolio Manager"
             activities.append({
                 "agent": agent,
