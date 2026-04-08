@@ -21,7 +21,7 @@ const TYPE_DOT: Record<string, string> = {
 type FilterType = 'all' | 'task' | 'result'
 
 export default function Messages() {
-  const { data, loading } = usePoll<AgentMessage[]>('/api/messages', 30_000)
+  const { data, loading, error } = usePoll<AgentMessage[]>('/api/messages', 30_000)
   const [filter, setFilter] = useState<FilterType>('all')
 
   const messages = data ?? []
@@ -34,6 +34,13 @@ export default function Messages() {
         <h1 className="text-xl font-semibold text-gray-100">Message Flow</h1>
         <p className="text-sm text-gray-500 mt-1">Agent communication history via NATS</p>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-950/30 border border-red-800/40 rounded-lg px-4 py-3 text-sm text-red-400">
+          Unable to load messages. Retrying automatically.
+        </div>
+      )}
 
       {/* Filter buttons */}
       <div className="flex items-center gap-2">

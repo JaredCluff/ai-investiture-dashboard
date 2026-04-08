@@ -65,10 +65,13 @@ export default function Layout() {
       <header className="border-b border-gray-800 bg-gray-900 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center h-14 gap-6">
           {/* Brand */}
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-green-400 font-bold text-lg">AI-Investiture</span>
-            <span className="text-xs text-gray-500 border border-gray-700 rounded px-1.5 py-0.5">$500 Portfolio</span>
-          </div>
+          <NavLink to="/overview" className="flex items-center gap-2 shrink-0 group">
+            <span className="w-7 h-7 rounded-md bg-green-900/60 border border-green-700/40 flex items-center justify-center text-green-400 font-bold text-sm group-hover:bg-green-900/80 transition-colors">
+              Ai
+            </span>
+            <span className="text-green-400 font-bold text-lg hidden sm:inline">AI-Investiture</span>
+            <span className="text-xs text-gray-500 border border-gray-700 rounded px-1.5 py-0.5 hidden md:inline">$500 Portfolio</span>
+          </NavLink>
 
           {/* Nav groups */}
           <nav className="flex items-center gap-4 overflow-x-auto">
@@ -110,19 +113,19 @@ export default function Layout() {
       </main>
 
       {/* Activity Feed Drawer */}
-      <div className="border-t border-gray-800 bg-gray-900/50">
+      <div className="border-t border-gray-800 bg-gray-900/80 backdrop-blur-sm">
         <button
           onClick={() => setActivityOpen(o => !o)}
-          className="w-full px-4 py-2 flex items-center justify-between text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/30 transition-colors"
+          className="w-full px-4 py-2.5 flex items-center justify-between text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/40 transition-colors"
         >
           <span className="flex items-center gap-2">
-            <span className={`w-1.5 h-1.5 rounded-full ${activityOpen ? 'bg-green-400' : 'bg-gray-600'}`} />
-            Agent Activity Feed
+            <span className={`w-1.5 h-1.5 rounded-full ${activityOpen ? 'bg-green-400' : 'bg-gray-600'} transition-colors`} />
+            <span className="font-medium">Agent Activity</span>
           </span>
-          <span>{activityOpen ? '▼' : '▲'}</span>
+          <span className={`transition-transform ${activityOpen ? 'rotate-180' : ''}`}>&#9650;</span>
         </button>
         {activityOpen && (
-          <div className="h-48 border-t border-gray-800">
+          <div className="h-48 border-t border-gray-800 overflow-y-auto">
             <ActivityFeed />
           </div>
         )}
@@ -130,11 +133,21 @@ export default function Layout() {
 
       <ChatWidget />
 
-      <footer className="border-t border-gray-800 py-3 text-center text-xs text-gray-600">
-        AI-Investiture · Genkins Forge LLC · Not financial advice ·
-        Powered by <a href="https://knowledgenexus.ai" className="text-gray-500 hover:text-gray-400">Knowledge Nexus</a>
-        {' '}+{' '}
-        <a href="https://knowledgenexus.ai" className="text-gray-500 hover:text-gray-400">Paperclip</a>
+      <footer className="border-t border-gray-800 py-4 text-center text-xs text-gray-600 space-y-1">
+        <div>
+          AI-Investiture · <a href="https://knowledgenexus.ai" className="text-gray-500 hover:text-gray-400" target="_blank" rel="noopener noreferrer">Genkins Forge LLC</a> · Not financial advice
+        </div>
+        <div className="flex items-center justify-center gap-3 text-gray-700">
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-800 inline-block" />
+            <a href="https://knowledgenexus.ai" className="text-gray-500 hover:text-gray-400" target="_blank" rel="noopener noreferrer">Knowledge Nexus</a>
+          </span>
+          <span className="text-gray-800">+</span>
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-800 inline-block" />
+            <span className="text-gray-500">Paperclip</span>
+          </span>
+        </div>
       </footer>
     </div>
   )

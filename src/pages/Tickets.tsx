@@ -105,16 +105,16 @@ export default function Tickets() {
       </div>
 
       {/* Tickets table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-x-auto">
         {loading ? (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="text-xs text-gray-500 border-b border-gray-800">
-                <th className="text-left px-4 py-2">Identifier</th>
-                <th className="text-left px-4 py-2">Title</th>
-                <th className="text-left px-4 py-2">Status</th>
-                <th className="text-left px-4 py-2">Priority</th>
-                <th className="text-left px-4 py-2">Updated</th>
+                <th className="text-left px-4 py-2.5">Identifier</th>
+                <th className="text-left px-4 py-2.5">Title</th>
+                <th className="text-left px-4 py-2.5">Status</th>
+                <th className="text-left px-4 py-2.5">Priority</th>
+                <th className="text-left px-4 py-2.5">Updated</th>
               </tr>
             </thead>
             <tbody>
@@ -131,14 +131,14 @@ export default function Tickets() {
             </p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="text-xs text-gray-500 border-b border-gray-800">
-                <th className="text-left px-4 py-2">Identifier</th>
-                <th className="text-left px-4 py-2">Title</th>
-                <th className="text-left px-4 py-2">Status</th>
-                <th className="text-left px-4 py-2">Priority</th>
-                <th className="text-left px-4 py-2">Updated</th>
+                <th className="text-left px-4 py-2.5">Identifier</th>
+                <th className="text-left px-4 py-2.5">Title</th>
+                <th className="text-left px-4 py-2.5">Status</th>
+                <th className="text-left px-4 py-2.5">Priority</th>
+                <th className="text-left px-4 py-2.5">Updated</th>
               </tr>
             </thead>
             <tbody>
