@@ -1,7 +1,8 @@
 import os
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from services.redactor import redact
+from routers.paperclip import _require_board_auth
 
 router = APIRouter(tags=["messages"])
 
@@ -10,7 +11,7 @@ PAPERCLIP_TOKEN = lambda: os.environ["PAPERCLIP_TOKEN"]
 COMPANY_ID = lambda: os.environ["PAPERCLIP_COMPANY_ID"]
 
 @router.get("/messages")
-async def get_messages(limit: int = 50):
+async def get_messages(limit: int = 50, _: None = Depends(_require_board_auth)):
     """Agent message history derived from Paperclip ticket events."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -33,14 +34,22 @@ async def get_messages(limit: int = 50):
             # Determine from/to based on ticket type and number
             num_str = identifier.split("-")[1] if "-" in identifier else "0"
             num = int(num_str) if num_str.isdigit() else 0
+            if num in range(1, 9):
+                assignee = "CTO"
+            elif num in range(9, 18):
+                assignee = "Researcher"
+            elif num in range(18, 31):
+                assignee = "Engineer"
+            else:
+                assignee = "Portfolio Manager"
             if status == "done":
                 msg_type = "result"
-                from_agent = "Engineer" if 18 <= num <= 33 else "Portfolio Manager" if num >= 31 else "Researcher"
+                from_agent = assignee
                 to_agent = "CTO"
             else:
                 msg_type = "task"
                 from_agent = "CTO"
-                to_agent = "Engineer" if 18 <= num <= 33 else "Portfolio Manager" if num >= 31 else "Researcher"
+                to_agent = assignee
             messages.append({
                 "id": issue.get("id", ""),
                 "subject": f"agent.{'result' if msg_type == 'result' else 'task'}.{to_agent.lower().replace(' ', '-')}",

@@ -35,6 +35,9 @@ NIM_API_KEY = os.environ.get("NIM_API_KEY", "")
 NIM_BASE_URL = os.environ.get("NIM_BASE_URL", "https://integrate.api.nvidia.com/v1")
 NIM_MODEL = os.environ.get("NIM_MODEL", "nvidia/llama-3.1-nemotron-ultra-253b-v1")
 
+# Module-level async client for connection reuse across requests
+_nim_client = openai.AsyncOpenAI(api_key=NIM_API_KEY, base_url=NIM_BASE_URL)
+
 # ── System prompt (hardcoded — not configurable at runtime) ──────────────────
 
 SYSTEM_PROMPT = """You are Spark, the public-facing PR agent for AI-Investiture (investments.knowledgenexus.ai).
@@ -377,8 +380,7 @@ async def send_message(
         "Could you rephrase your question?"
     )
     try:
-        nim_client = openai.OpenAI(api_key=NIM_API_KEY, base_url=NIM_BASE_URL)
-        api_response = nim_client.chat.completions.create(
+        api_response = await _nim_client.chat.completions.create(
             model=NIM_MODEL,
             max_tokens=8192,
             messages=[{"role": "system", "content": SYSTEM_PROMPT}] + claude_messages,
