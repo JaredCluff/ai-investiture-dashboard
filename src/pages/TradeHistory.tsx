@@ -99,9 +99,9 @@ export default function TradeHistory() {
       </div>
 
       {/* Trade table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-x-auto">
         {loading ? (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-xs text-gray-500 border-b border-gray-800">
                 <th className="text-left px-4 py-2">Submitted</th>
@@ -130,7 +130,7 @@ export default function TradeHistory() {
           </div>
         ) : (
           <>
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="text-xs text-gray-500 border-b border-gray-800">
                   <th className="text-left px-4 py-2">Submitted</th>
