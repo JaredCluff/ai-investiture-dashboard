@@ -14,6 +14,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import { usePoll } from '../hooks/usePoll'
+import SymbolTooltip from '../components/SymbolTooltip'
 
 interface Portfolio {
   equity: number
@@ -128,7 +129,7 @@ function MomentumCell({ score }: { score: MomentumScore }) {
     <div
       className={`border rounded-lg p-3 ${bgClass} ${smaAccent}`}
     >
-      <div className="font-bold text-gray-100 text-base">{score.ticker}</div>
+      <div className="font-bold text-gray-100 text-base"><SymbolTooltip symbol={score.ticker} /></div>
       <div className="text-xs text-gray-500 truncate">{score.sector}</div>
       <div className={`text-sm font-semibold mt-1 ${scoreColor}`}>
         {s > 0 ? '+' : ''}{s.toFixed(1)}
@@ -397,7 +398,7 @@ export default function Overview() {
               <div className="h-6 w-24 bg-gray-800 rounded animate-pulse" />
             ) : closestStop ? (
               <p className={`text-sm font-semibold ${stopColor}`}>
-                {closestStop.ticker}: {closestStop.buffer.toFixed(1)}% to stop
+                <SymbolTooltip symbol={closestStop.ticker} />: {closestStop.buffer.toFixed(1)}% to stop
               </p>
             ) : (
               <p className="text-sm text-gray-600">No open positions</p>
@@ -580,7 +581,7 @@ export default function Overview() {
             <tbody>
               {pos.map((h) => (
                 <tr key={h.symbol} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                  <td className="px-4 py-3 font-medium text-gray-100">{h.symbol}</td>
+                  <td className="px-4 py-3"><SymbolTooltip symbol={h.symbol} className="font-medium text-gray-100" /></td>
                   <td className="text-right px-4 py-3 text-gray-300">{h.qty}</td>
                   <td className="text-right px-4 py-3 text-gray-300">
                     ${Number(h.market_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

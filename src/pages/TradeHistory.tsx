@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { usePoll } from '../hooks/usePoll'
 import StatusBadge from '../components/StatusBadge'
+import SymbolTooltip from '../components/SymbolTooltip'
 
 interface Trade {
   id: string
@@ -147,7 +148,7 @@ export default function TradeHistory() {
                     <td className="px-4 py-3 text-gray-400 text-xs">
                       {new Date(t.submitted_at).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-100">{t.symbol}</td>
+                    <td className="px-4 py-3"><SymbolTooltip symbol={t.symbol} className="font-medium text-gray-100" /></td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
                         t.side === 'buy'

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { apiFetch } from '../lib/api'
+import SymbolTooltip from '../components/SymbolTooltip'
 import {
   ResponsiveContainer,
   AreaChart,
@@ -247,7 +248,7 @@ export default function MarketView() {
       <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
           <span className="text-sm font-medium text-gray-300">
-            {symbol}
+            <SymbolTooltip symbol={symbol} />
             {entryPrice && (
               <span className="ml-2 text-xs text-yellow-400 font-normal">
                 entry @ ${entryPrice.toFixed(2)}
