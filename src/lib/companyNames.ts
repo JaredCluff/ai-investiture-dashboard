@@ -175,6 +175,23 @@ const COMPANY_NAMES: Record<string, string> = {
   SLV: 'iShares Silver Trust',
   USO: 'United States Oil Fund',
   UNG: 'United States Natural Gas Fund',
+  DBC: 'Invesco DB Commodity Index Tracking Fund',
+
+  // Fixed Income ETFs
+  TLT: 'iShares 20+ Year Treasury Bond ETF',
+  IEF: 'iShares 7-10 Year Treasury Bond ETF',
+  SHY: 'iShares 1-3 Year Treasury Bond ETF',
+  BND: 'Vanguard Total Bond Market ETF',
+  AGG: 'iShares Core US Aggregate Bond ETF',
+  HYG: 'iShares iBoxx High Yield Corporate Bond ETF',
+  LQD: 'iShares iBoxx Investment Grade Corporate Bond ETF',
+
+  // Thematic / Sector-Specific ETFs
+  SOXX: 'iShares Semiconductor ETF',
+  SMH: 'VanEck Semiconductor ETF',
+  BOTZ: 'Global X Robotics & Artificial Intelligence ETF',
+  AIQ: 'Global X Artificial Intelligence & Technology ETF',
+  IGV: 'iShares Expanded Tech-Software Sector ETF',
 
   // Leveraged / Inverse ETFs
   TQQQ: 'ProShares UltraPro QQQ (3x Long NASDAQ-100)',
