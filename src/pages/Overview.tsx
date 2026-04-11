@@ -135,7 +135,7 @@ function MomentumCell({ score }: { score: MomentumScore }) {
         {s > 0 ? '+' : ''}{s.toFixed(1)}
       </div>
       <div className={`text-xs mt-0.5 ${r1wColor}`}>
-        {r1wArrow} {score.r_1w != null ? `${(score.r_1w * 100).toFixed(1)}%` : '—'} 1W
+        {r1wArrow} {score.r_1w != null ? `${score.r_1w.toFixed(1)}%` : '—'} 1W
       </div>
     </div>
   )
