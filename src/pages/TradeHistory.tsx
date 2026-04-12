@@ -75,7 +75,7 @@ export default function TradeHistory() {
         <select
           value={symbolFilter}
           onChange={(e) => { setSymbolFilter(e.target.value); setPage(1) }}
-          className="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded px-3 py-1.5 focus:outline-none focus:border-gray-500"
+          className="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded px-3 py-2 focus:outline-none focus:border-gray-500"
         >
           <option value="all">All symbols</option>
           {uniqueSymbols.map((s) => (
@@ -85,7 +85,7 @@ export default function TradeHistory() {
         <select
           value={sideFilter}
           onChange={(e) => { setSideFilter(e.target.value); setPage(1) }}
-          className="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded px-3 py-1.5 focus:outline-none focus:border-gray-500"
+          className="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded px-3 py-2 focus:outline-none focus:border-gray-500"
         >
           <option value="all">All sides</option>
           <option value="buy">Buy</option>
@@ -185,7 +185,7 @@ export default function TradeHistory() {
       </div>
 
       {/* Wash sale notice */}
-      <div className="bg-yellow-950/30 border border-yellow-800/40 rounded-lg px-4 py-3 text-xs text-yellow-500/80">
+      <div className="bg-yellow-950/30 border border-yellow-800/40 rounded-lg px-4 py-3 text-sm text-yellow-400">
         <strong>Wash Sale Tracking:</strong> Positions sold at a loss are automatically monitored
         for 30-day re-purchase windows (IRC §1091). Flagged trades will be highlighted in red.
         Mark-to-market election (§475f) under consideration — see AII-9.

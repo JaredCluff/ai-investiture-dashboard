@@ -450,8 +450,8 @@ export default function Overview() {
               />
               <YAxis
                 tick={{ fill: '#6b7280', fontSize: 11 }}
-                tickFormatter={(v: number) => '$' + v.toLocaleString()}
-                width={80}
+                tickFormatter={(v: number) => '$' + (v / 1000).toFixed(0) + 'K'}
+                width={52}
               />
               <Tooltip
                 contentStyle={{

@@ -113,7 +113,7 @@ export default function Layout() {
             {/* Hamburger (mobile only) */}
             <button
               onClick={() => setMobileNavOpen(o => !o)}
-              className="md:hidden p-2 -mr-1 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+              className="md:hidden p-2.5 -mr-1 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
               aria-label="Toggle navigation"
               aria-expanded={mobileNavOpen}
             >

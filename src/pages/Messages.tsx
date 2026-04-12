@@ -48,7 +48,7 @@ export default function Messages() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 text-xs font-medium rounded transition-colors capitalize ${
+            className={`px-3 py-2 text-xs font-medium rounded transition-colors capitalize ${
               filter === f
                 ? 'bg-green-900/40 text-green-400 border border-green-800/50'
                 : 'text-gray-400 border border-gray-800 hover:text-gray-200 hover:bg-gray-800'
