@@ -478,6 +478,13 @@ export default function Overview() {
                   value === 'portfolio' ? 'Portfolio' : 'SPY (normalized)'
                 }
               />
+              <ReferenceLine
+                y={100000}
+                stroke="#fbbf24"
+                strokeDasharray="3 3"
+                strokeWidth={1}
+                label={{ value: '$100K', position: 'right', fill: '#fbbf2480', fontSize: 10 }}
+              />
               <Line
                 type="monotone"
                 dataKey="portfolio"
