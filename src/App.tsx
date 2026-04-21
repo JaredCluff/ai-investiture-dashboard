@@ -15,6 +15,8 @@ import BlogPost from './pages/BlogPost'
 import Search from './pages/Search'
 import Messages from './pages/Messages'
 import Feed from './pages/Feed'
+import SystemStatus from './pages/SystemStatus'
+import Marketing from './pages/Marketing'
 
 function App() {
   return (
@@ -41,6 +43,8 @@ function App() {
             <Route path="search" element={<Search />} />
             {/* About */}
             <Route path="about" element={<About />} />
+            <Route path="status" element={<SystemStatus />} />
+            <Route path="marketing" element={<Marketing />} />
           </Route>
         </Routes>
       </BrowserRouter>
