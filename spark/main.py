@@ -14,6 +14,7 @@ Endpoints match aii-pr-agent for frontend compatibility:
   GET  /chat/health
 """
 
+import asyncio
 import json
 import os
 import re
@@ -273,6 +274,7 @@ async def call_ollama(messages: list[dict]) -> str:
                     "model": OLLAMA_MODEL,
                     "messages": messages,
                     "stream": False,
+                    "keep_alive": "6m",
                     "options": {
                         "temperature": 0.7,
                         "num_predict": 1024,
@@ -305,9 +307,30 @@ app.add_middleware(
 )
 
 
+async def _warmup_loop() -> None:
+    """Keep gemma4:e4b resident in Ollama to avoid VRAM eviction latency.
+
+    mxbai-embed-large (used by kb_lookup) evicts gemma from VRAM on every
+    embed call.  Without this loop the model must reload from disk (>180 s),
+    which exceeds the 60 s client timeout.  Pinging every 270 s keeps gemma's
+    weights in host RAM so the reload is RAM→VRAM (~5-15 s) instead of
+    disk→VRAM.  keep_alive="6m" on each call_ollama invocation prevents Ollama
+    from unloading gemma between pings.
+    """
+    # Brief initial delay so the container finishes starting before we hit Ollama
+    await asyncio.sleep(5)
+    while True:
+        try:
+            await call_ollama([{"role": "user", "content": "ping"}])
+        except Exception:
+            pass
+        await asyncio.sleep(270)
+
+
 @app.on_event("startup")
 async def startup() -> None:
     init_db()
+    asyncio.create_task(_warmup_loop())
 
 
 # ── Request models ────────────────────────────────────────────────────────────
