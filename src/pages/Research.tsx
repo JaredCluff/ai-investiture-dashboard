@@ -32,6 +32,18 @@ function parseDate(s: string | null): number {
   return isNaN(d.getTime()) ? 0 : d.getTime()
 }
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*{1,3}([^*\n]+)\*{1,3}/g, '$1')
+    .replace(/_{1,3}([^_\n]+)_{1,3}/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^[-*>]\s+/gm, '')
+    .replace(/\n+/g, ' ')
+    .trim()
+}
+
 function highlight(text: string, query: string): React.ReactNode {
   if (!query.trim()) return text
   const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
@@ -240,7 +252,7 @@ export default function Research() {
               </div>
               {report.summary && (
                 <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">
-                  {highlight(report.summary, q)}
+                  {highlight(stripMarkdown(report.summary), q)}
                 </p>
               )}
             </button>
