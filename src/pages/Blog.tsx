@@ -20,6 +20,18 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'title_asc', label: 'Title A–Z' },
 ]
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*{1,3}([^*\n]+)\*{1,3}/g, '$1')
+    .replace(/_{1,3}([^_\n]+)_{1,3}/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^[-*>]\s+/gm, '')
+    .replace(/\n+/g, ' ')
+    .trim()
+}
+
 function highlight(text: string, query: string): React.ReactNode {
   if (!query.trim()) return text
   const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
@@ -163,7 +175,7 @@ export default function Blog() {
             ))}
           </select>
 
-          {/* Tag filter — top 15 most-used tags */}
+          {/* Tag filter — all tags sorted by frequency */}
           <select
             value={tag}
             onChange={e => setParam('tag', e.target.value)}
@@ -171,7 +183,7 @@ export default function Blog() {
             className="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded px-3 py-2 focus:outline-none focus:border-gray-500"
           >
             <option value="all">All tags</option>
-            {allTags.slice(0, 15).map(t => (
+            {allTags.map(t => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
@@ -267,7 +279,7 @@ export default function Blog() {
               )}
               {post.summary && (
                 <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">
-                  {highlight(post.summary, q)}
+                  {highlight(stripMarkdown(post.summary), q)}
                 </p>
               )}
             </div>
