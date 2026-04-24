@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { usePoll } from '../hooks/usePoll'
 import StatusBadge from '../components/StatusBadge'
+import SymbolTooltip from '../components/SymbolTooltip'
 
 interface Trade {
   id: string
@@ -74,7 +75,7 @@ export default function TradeHistory() {
         <select
           value={symbolFilter}
           onChange={(e) => { setSymbolFilter(e.target.value); setPage(1) }}
-          className="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded px-3 py-1.5 focus:outline-none focus:border-gray-500"
+          className="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded px-3 py-2 focus:outline-none focus:border-gray-500"
         >
           <option value="all">All symbols</option>
           {uniqueSymbols.map((s) => (
@@ -84,7 +85,7 @@ export default function TradeHistory() {
         <select
           value={sideFilter}
           onChange={(e) => { setSideFilter(e.target.value); setPage(1) }}
-          className="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded px-3 py-1.5 focus:outline-none focus:border-gray-500"
+          className="bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded px-3 py-2 focus:outline-none focus:border-gray-500"
         >
           <option value="all">All sides</option>
           <option value="buy">Buy</option>
@@ -98,9 +99,9 @@ export default function TradeHistory() {
       </div>
 
       {/* Trade table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-x-auto">
         {loading ? (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-xs text-gray-500 border-b border-gray-800">
                 <th className="text-left px-4 py-2">Submitted</th>
@@ -129,7 +130,7 @@ export default function TradeHistory() {
           </div>
         ) : (
           <>
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="text-xs text-gray-500 border-b border-gray-800">
                   <th className="text-left px-4 py-2">Submitted</th>
@@ -147,7 +148,7 @@ export default function TradeHistory() {
                     <td className="px-4 py-3 text-gray-400 text-xs">
                       {new Date(t.submitted_at).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-100">{t.symbol}</td>
+                    <td className="px-4 py-3"><SymbolTooltip symbol={t.symbol} className="font-medium text-gray-100" /></td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
                         t.side === 'buy'
@@ -184,7 +185,7 @@ export default function TradeHistory() {
       </div>
 
       {/* Wash sale notice */}
-      <div className="bg-yellow-950/30 border border-yellow-800/40 rounded-lg px-4 py-3 text-xs text-yellow-500/80">
+      <div className="bg-yellow-950/30 border border-yellow-800/40 rounded-lg px-4 py-3 text-sm text-yellow-400">
         <strong>Wash Sale Tracking:</strong> Positions sold at a loss are automatically monitored
         for 30-day re-purchase windows (IRC §1091). Flagged trades will be highlighted in red.
         Mark-to-market election (§475f) under consideration — see AII-9.

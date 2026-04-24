@@ -21,7 +21,7 @@ const TYPE_DOT: Record<string, string> = {
 type FilterType = 'all' | 'task' | 'result'
 
 export default function Messages() {
-  const { data, loading } = usePoll<AgentMessage[]>('/api/messages', 30_000)
+  const { data, loading, error } = usePoll<AgentMessage[]>('/api/messages', 30_000)
   const [filter, setFilter] = useState<FilterType>('all')
 
   const messages = data ?? []
@@ -35,13 +35,20 @@ export default function Messages() {
         <p className="text-sm text-gray-500 mt-1">Agent communication history via NATS</p>
       </div>
 
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-950/30 border border-red-800/40 rounded-lg px-4 py-3 text-sm text-red-400">
+          Unable to load messages. Retrying automatically.
+        </div>
+      )}
+
       {/* Filter buttons */}
       <div className="flex items-center gap-2">
         {(['all', 'task', 'result'] as FilterType[]).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 text-xs font-medium rounded transition-colors capitalize ${
+            className={`px-3 py-2 text-xs font-medium rounded transition-colors capitalize ${
               filter === f
                 ? 'bg-green-900/40 text-green-400 border border-green-800/50'
                 : 'text-gray-400 border border-gray-800 hover:text-gray-200 hover:bg-gray-800'

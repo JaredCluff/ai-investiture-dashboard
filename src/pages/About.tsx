@@ -123,18 +123,42 @@ export default function About() {
       </div>
 
       {/* Tech Stack */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 text-sm text-gray-400">
-        <h2 className="text-sm font-medium text-gray-300 mb-2">Built With</h2>
-        <ul className="space-y-1 text-xs text-gray-500">
-          <li>React + Vite + TypeScript</li>
-          <li>Tailwind CSS</li>
-          <li>FastAPI + Python (backend API)</li>
-          <li>Alpaca (paper trading brokerage)</li>
-          <li>NATS / Nuntius (agent messaging)</li>
-          <li>Knowledge Nexus (document intelligence)</li>
-          <li>Paperclip (task management)</li>
-          <li>nginx / Podman / Cloudflare Tunnel</li>
-        </ul>
+      <div className="bg-gray-900 border border-gray-800 rounded-lg p-5 space-y-4">
+        <h2 className="text-base font-medium text-gray-100">Tech Stack</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div className="space-y-2">
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Frontend</h3>
+            <ul className="space-y-1 text-xs text-gray-400">
+              <li>React 19 + Vite + TypeScript</li>
+              <li>Tailwind CSS</li>
+              <li>Recharts (data visualization)</li>
+            </ul>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Backend</h3>
+            <ul className="space-y-1 text-xs text-gray-400">
+              <li>FastAPI + Python</li>
+              <li>Alpaca (paper trading brokerage)</li>
+              <li>nginx / Podman / Cloudflare Tunnel</li>
+            </ul>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">AI Infrastructure</h3>
+            <ul className="space-y-1 text-xs text-gray-400">
+              <li>Claude Code (autonomous agents)</li>
+              <li>NATS / Nuntius (agent messaging)</li>
+              <li>Knowledge Nexus (document intelligence)</li>
+            </ul>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Operations</h3>
+            <ul className="space-y-1 text-xs text-gray-400">
+              <li>Paperclip (task management)</li>
+              <li>Langfuse (observability)</li>
+              <li>launchd + cron (scheduling)</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   )

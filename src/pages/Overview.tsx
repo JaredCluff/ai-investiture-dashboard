@@ -14,6 +14,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import { usePoll } from '../hooks/usePoll'
+import SymbolTooltip from '../components/SymbolTooltip'
 
 interface Portfolio {
   equity: number
@@ -128,13 +129,13 @@ function MomentumCell({ score }: { score: MomentumScore }) {
     <div
       className={`border rounded-lg p-3 ${bgClass} ${smaAccent}`}
     >
-      <div className="font-bold text-gray-100 text-base">{score.ticker}</div>
+      <div className="font-bold text-gray-100 text-base"><SymbolTooltip symbol={score.ticker} /></div>
       <div className="text-xs text-gray-500 truncate">{score.sector}</div>
       <div className={`text-sm font-semibold mt-1 ${scoreColor}`}>
         {s > 0 ? '+' : ''}{s.toFixed(1)}
       </div>
       <div className={`text-xs mt-0.5 ${r1wColor}`}>
-        {r1wArrow} {score.r_1w != null ? `${(score.r_1w * 100).toFixed(1)}%` : '—'} 1W
+        {r1wArrow} {score.r_1w != null ? `${score.r_1w.toFixed(1)}%` : '—'} 1W
       </div>
     </div>
   )
@@ -397,7 +398,7 @@ export default function Overview() {
               <div className="h-6 w-24 bg-gray-800 rounded animate-pulse" />
             ) : closestStop ? (
               <p className={`text-sm font-semibold ${stopColor}`}>
-                {closestStop.ticker}: {closestStop.buffer.toFixed(1)}% to stop
+                <SymbolTooltip symbol={closestStop.ticker} />: {closestStop.buffer.toFixed(1)}% to stop
               </p>
             ) : (
               <p className="text-sm text-gray-600">No open positions</p>
@@ -449,8 +450,8 @@ export default function Overview() {
               />
               <YAxis
                 tick={{ fill: '#6b7280', fontSize: 11 }}
-                tickFormatter={(v: number) => '$' + v.toLocaleString()}
-                width={80}
+                tickFormatter={(v: number) => '$' + (v / 1000).toFixed(0) + 'K'}
+                width={52}
               />
               <Tooltip
                 contentStyle={{
@@ -476,6 +477,13 @@ export default function Overview() {
                 formatter={(value: string) =>
                   value === 'portfolio' ? 'Portfolio' : 'SPY (normalized)'
                 }
+              />
+              <ReferenceLine
+                y={100000}
+                stroke="#fbbf24"
+                strokeDasharray="3 3"
+                strokeWidth={1}
+                label={{ value: '$100K', position: 'right', fill: '#fbbf2480', fontSize: 10 }}
               />
               <Line
                 type="monotone"
@@ -543,7 +551,7 @@ export default function Overview() {
       </div>
 
       {/* Holdings table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+      <div className="bg-gray-900 border border-gray-800 rounded-lg">
         <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
           <h2 className="text-sm font-medium text-gray-300">Holdings</h2>
           {positions.lastUpdated && (
@@ -553,57 +561,59 @@ export default function Overview() {
           )}
         </div>
 
-        {loading ? (
-          <table className="w-full text-sm">
-            <tbody>
-              <SkeletonRow />
-              <SkeletonRow />
-              <SkeletonRow />
-            </tbody>
-          </table>
-        ) : pos.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-gray-600">
-            No open positions — fully in cash
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-gray-500 border-b border-gray-800">
-                <th className="text-left px-4 py-2">Symbol</th>
-                <th className="text-right px-4 py-2">Qty</th>
-                <th className="text-right px-4 py-2">Mkt Value</th>
-                <th className="text-right px-4 py-2">Avg Entry</th>
-                <th className="text-right px-4 py-2">Unrealized P&amp;L</th>
-                <th className="text-right px-4 py-2">1M Chart</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pos.map((h) => (
-                <tr key={h.symbol} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                  <td className="px-4 py-3 font-medium text-gray-100">{h.symbol}</td>
-                  <td className="text-right px-4 py-3 text-gray-300">{h.qty}</td>
-                  <td className="text-right px-4 py-3 text-gray-300">
-                    ${Number(h.market_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                  <td className="text-right px-4 py-3 text-gray-300">
-                    ${Number(h.avg_entry_price).toFixed(2)}
-                  </td>
-                  <td className={`text-right px-4 py-3 ${h.unrealized_pl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {h.unrealized_pl >= 0 ? '+' : ''}${h.unrealized_pl.toFixed(2)}
-                    <span className="ml-1 text-xs opacity-70">
-                      ({h.unrealized_plpc >= 0 ? '+' : ''}{h.unrealized_plpc.toFixed(2)}%)
-                    </span>
-                  </td>
-                  <td className="text-right px-4 py-2">
-                    <div className="flex justify-end">
-                      <PositionSparkline symbol={h.symbol} entryPrice={h.avg_entry_price} />
-                    </div>
-                  </td>
+        <div className="overflow-x-auto">
+          {loading ? (
+            <table className="w-full text-sm min-w-[560px]">
+              <tbody>
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+              </tbody>
+            </table>
+          ) : pos.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-gray-600">
+              No open positions — fully in cash
+            </div>
+          ) : (
+            <table className="w-full text-sm min-w-[560px]">
+              <thead>
+                <tr className="text-xs text-gray-500 border-b border-gray-800">
+                  <th className="text-left px-4 py-2">Symbol</th>
+                  <th className="text-right px-4 py-2">Qty</th>
+                  <th className="text-right px-4 py-2">Mkt Value</th>
+                  <th className="text-right px-4 py-2">Avg Entry</th>
+                  <th className="text-right px-4 py-2">Unrealized P&amp;L</th>
+                  <th className="text-right px-4 py-2 hidden sm:table-cell">1M Chart</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {pos.map((h) => (
+                  <tr key={h.symbol} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                    <td className="px-4 py-3"><SymbolTooltip symbol={h.symbol} className="font-medium text-gray-100" /></td>
+                    <td className="text-right px-4 py-3 text-gray-300">{h.qty}</td>
+                    <td className="text-right px-4 py-3 text-gray-300">
+                      ${Number(h.market_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="text-right px-4 py-3 text-gray-300">
+                      ${Number(h.avg_entry_price).toFixed(2)}
+                    </td>
+                    <td className={`text-right px-4 py-3 ${h.unrealized_pl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {h.unrealized_pl >= 0 ? '+' : ''}${h.unrealized_pl.toFixed(2)}
+                      <span className="ml-1 text-xs opacity-70">
+                        ({h.unrealized_plpc >= 0 ? '+' : ''}{h.unrealized_plpc.toFixed(2)}%)
+                      </span>
+                    </td>
+                    <td className="text-right px-4 py-2 hidden sm:table-cell">
+                      <div className="flex justify-end">
+                        <PositionSparkline symbol={h.symbol} entryPrice={h.avg_entry_price} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   )
