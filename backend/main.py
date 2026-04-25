@@ -1,8 +1,17 @@
+import logging
 import os
+import time
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+_req_log = logging.getLogger("aii.requests")
 
 # Load credentials before any router imports touch os.environ
 load_dotenv(os.path.expanduser("~/.ai-investiture/.env"))
@@ -28,11 +37,24 @@ app.add_middleware(
 
 _DASHBOARD_API_KEY = os.environ.get("DASHBOARD_API_KEY", "")
 
-_PUBLIC_POST_PATHS = {"/api/analytics/hit"}
+_PUBLIC_POST_PATHS = {"/api/analytics/hit", "/api/errors"}
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next) -> Response:
+    start = time.monotonic()
+    response = await call_next(request)
+    elapsed_ms = (time.monotonic() - start) * 1000
+    status_code = response.status_code
+    ip = request.headers.get("X-Real-IP") or (request.client.host if request.client else "-")
+    if status_code >= 400:
+        _req_log.warning("%s %s → %d (%.0fms) ip=%s", request.method, request.url.path, status_code, elapsed_ms, ip)
+    return response
+
 
 @app.middleware("http")
 async def api_key_middleware(request: Request, call_next) -> Response:
-    """Require X-API-Key header on all /api/ POST routes except health and public analytics."""
+    """Require X-API-Key header on all /api/ POST routes except health and public endpoints."""
     if (
         _DASHBOARD_API_KEY
         and request.url.path.startswith("/api/")
