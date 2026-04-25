@@ -43,6 +43,8 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Info',
     items: [
       { to: '/about', label: 'About' },
+      { to: '/status', label: 'Status' },
+      { to: '/marketing', label: 'Marketing' },
     ],
   },
 ]
