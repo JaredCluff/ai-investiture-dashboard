@@ -1,10 +1,15 @@
 import asyncio
 import os
+import re
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException
 import httpx
 
+from routers.paperclip import _require_board_auth
+
 router = APIRouter(tags=["bars"])
+
+_SYMBOL_RE = re.compile(r"^[A-Z0-9.]{1,12}$")
 
 ALPACA_DATA_URL = os.environ.get("ALPACA_DATA_URL", "https://data.alpaca.markets")
 ALPACA_KEY = lambda: os.environ["ALPACA_API_KEY_ID"]
@@ -19,6 +24,7 @@ def _auth():
 _bars_cache: dict = {}
 _bars_lock = asyncio.Lock()
 _CACHE_TTL = 300  # 5 min for intraday, 1h for daily
+_MAX_CACHE_ENTRIES = 100
 
 
 def _get_cache(key):
@@ -29,6 +35,9 @@ def _get_cache(key):
 
 
 def _set_cache(key, data, ttl=300):
+    if len(_bars_cache) >= _MAX_CACHE_ENTRIES:
+        oldest = min(_bars_cache, key=lambda k: _bars_cache[k]["ts"])
+        del _bars_cache[oldest]
     _bars_cache[key] = {"data": data, "ts": datetime.now(timezone.utc), "ttl": ttl}
     return data
 
@@ -42,9 +51,15 @@ TIMEFRAME_MAP = {
 
 
 @router.get("/bars/{symbol}")
-async def get_bars(symbol: str, period: str = Query(default="1M")):
+async def get_bars(
+    symbol: str,
+    period: str = Query(default="1M"),
+    _: None = Depends(_require_board_auth),
+):
     """OHLCV bars for a symbol from Alpaca data API."""
     symbol = symbol.upper()
+    if not _SYMBOL_RE.match(symbol):
+        raise HTTPException(status_code=400, detail="Invalid symbol")
     cache_key = f"bars_{symbol}_{period}"
     async with _bars_lock:
         cached = _get_cache(cache_key)
