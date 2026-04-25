@@ -109,7 +109,7 @@ export default function Marketing() {
         )}
       </div>
 
-      <Disclaimer variant="compact" />
+      <Disclaimer variant="inline" />
 
       {/* Audience Metrics */}
       <section>
