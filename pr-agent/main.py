@@ -346,8 +346,8 @@ async def send_message(
     if not raw:
         raise HTTPException(400, "Please enter a message")
 
+    _, is_injection = detect_injection(raw)
     sanitized = sanitize_input(raw)
-    _, is_injection = detect_injection(sanitized)
 
     if is_injection:
         record_injection_attempt(session_id, email_hash)

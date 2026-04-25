@@ -2,6 +2,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMemo, useCallback } from 'react'
 import { usePoll } from '../hooks/usePoll'
 import StatusBadge from '../components/StatusBadge'
+import Disclaimer from '../components/Disclaimer'
 
 interface ResearchReport {
   id: string
@@ -143,6 +144,8 @@ export default function Research() {
           </span>
         )}
       </div>
+
+      <Disclaimer variant="banner" />
 
       {/* Controls */}
       {!loading && allReports.length > 0 && (
