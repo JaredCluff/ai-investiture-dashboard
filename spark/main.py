@@ -321,7 +321,8 @@ async def _warmup_loop() -> None:
     await asyncio.sleep(5)
     while True:
         try:
-            await call_ollama([{"role": "user", "content": "ping"}])
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                await client.get(f"{OLLAMA_URL}/api/tags")
         except Exception:
             pass
         await asyncio.sleep(270)
@@ -443,10 +444,8 @@ async def send_message(
     if not raw:
         raise HTTPException(400, "Please enter a message")
 
-    sanitized = sanitize_input(raw)
-
-    # Prompt injection check
-    if detect_injection(sanitized):
+    # Prompt injection check — must run on raw input before sanitization strips phrases
+    if detect_injection(raw):
         return {
             "reply": (
                 "Ha — classic. I'm aware of prompt injection and that was a pretty clean attempt. "
@@ -455,6 +454,8 @@ async def send_message(
             ),
             "sources": [],
         }
+
+    sanitized = sanitize_input(raw)
 
     # Fetch history for context
     with get_conn() as conn:

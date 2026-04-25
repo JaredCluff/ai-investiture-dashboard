@@ -87,7 +87,7 @@ async def get_bars(
                 },
             )
             resp.raise_for_status()
-            bars = resp.json().get("bars", [])
+            bars = resp.json().get("bars") or []
     except httpx.HTTPError as e:
         raise HTTPException(status_code=502, detail=str(e))
 

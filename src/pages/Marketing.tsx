@@ -1,4 +1,5 @@
 import { usePoll } from '../hooks/usePoll'
+import Disclaimer from '../components/Disclaimer'
 import {
   ResponsiveContainer,
   BarChart,
@@ -107,6 +108,8 @@ export default function Marketing() {
           </span>
         )}
       </div>
+
+      <Disclaimer variant="compact" />
 
       {/* Audience Metrics */}
       <section>
