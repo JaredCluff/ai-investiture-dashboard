@@ -27,7 +27,26 @@ export default function MarkdownRenderer({ content, className = '' }: Props) {
       [&_table]:w-full [&_table]:text-sm [&_table]:border-collapse
       [&_th]:text-left [&_th]:text-gray-400 [&_th]:border-b [&_th]:border-gray-700 [&_th]:pb-2
       [&_td]:text-gray-300 [&_td]:border-b [&_td]:border-gray-800 [&_td]:py-2`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>{content}</ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeSanitize]}
+        components={{
+          a: ({ href, children, ...props }) => {
+            const isExternal = href?.startsWith('http://') || href?.startsWith('https://')
+            return (
+              <a
+                href={href}
+                {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                {...props}
+              >
+                {children}
+              </a>
+            )
+          },
+        }}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   )
 }

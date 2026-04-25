@@ -32,8 +32,17 @@ export default function ResearchDetail() {
         setLoading(false)
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Unknown error')
+        const msg = err instanceof Error ? err.message : 'Unknown error'
+        setError(msg)
         setLoading(false)
+        if (!msg.includes('404')) {
+          const screen = window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop'
+          apiFetch('/api/errors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: window.location.pathname, status: parseInt(msg.replace('HTTP ', '')) || 0, message: msg, screen }),
+          }).catch(() => {})
+        }
       })
   }, [id])
 
@@ -62,7 +71,11 @@ export default function ResearchDetail() {
 
       {error && (
         <div className="bg-red-950/30 border border-red-800/40 rounded-lg px-4 py-3 text-sm text-red-400">
-          {error === 'HTTP 404' ? 'Report not found.' : `Failed to load report: ${error}`}
+          {error === 'HTTP 404'
+            ? 'Report not found.'
+            : error === 'HTTP 451'
+            ? 'Report unavailable — content blocked (HTTP 451). This may be a regional restriction or legal hold.'
+            : `Failed to load report: ${error}`}
         </div>
       )}
 

@@ -35,13 +35,23 @@ def parse_research_file(path: Path, agent_role: str) -> dict | None:
         title = title_match.group(1).strip() if title_match else path.stem
         # Extract date from content (look for **Date:** pattern or frontmatter)
         date_match = re.search(r'\*\*Date:\*\*\s*(.+)', text)
-        date_str = date_match.group(1).strip() if date_match else None
-        # Summary: first non-heading, non-empty paragraph
+        if date_match:
+            date_str = date_match.group(1).strip()
+        else:
+            iso_match = re.search(r'(\d{4}-\d{2}-\d{2})', path.stem)
+            date_str = iso_match.group(1) if iso_match else None
+        # Summary: first non-heading prose paragraph (skip metadata, tables, rules)
         lines = text.split('\n')
         summary = ''
         for line in lines:
             stripped = line.strip()
-            if stripped and not stripped.startswith('#') and not stripped.startswith('**') and len(stripped) > 30:
+            if (stripped
+                    and not stripped.startswith('#')
+                    and not stripped.startswith('**')
+                    and not stripped.startswith('|')
+                    and not stripped.startswith('---')
+                    and not stripped.startswith('>')
+                    and len(stripped) > 30):
                 summary = stripped[:200] + ('...' if len(stripped) > 200 else '')
                 break
         return {
@@ -164,8 +174,7 @@ async def get_research(report_id: str):
     if AGENTS_DIR.exists():
         for agent_dir in AGENTS_DIR.iterdir():
             if agent_dir.is_dir():
-                md_file = agent_dir / f"{report_id}.md"
-                if md_file.exists():
+                for md_file in agent_dir.rglob(f"{report_id}.md"):
                     parsed = parse_research_file(md_file, agent_dir.name)
                     if parsed:
                         text = md_file.read_text(encoding="utf-8")
