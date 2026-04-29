@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { usePoll } from '../hooks/usePoll'
+import Disclaimer from '../components/Disclaimer'
 
 interface Activity {
   agent: string
@@ -70,6 +71,7 @@ export default function Feed() {
 
       {/* Feed */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">
+        <Disclaimer variant="banner" />
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 8 }).map((_, i) => (

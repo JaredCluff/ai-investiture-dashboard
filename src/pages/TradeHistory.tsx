@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { usePoll } from '../hooks/usePoll'
 import StatusBadge from '../components/StatusBadge'
 import SymbolTooltip from '../components/SymbolTooltip'
+import Disclaimer from '../components/Disclaimer'
 
 interface Trade {
   id: string
@@ -62,6 +63,8 @@ export default function TradeHistory() {
           </span>
         )}
       </div>
+
+      <Disclaimer variant="banner" />
 
       {/* Error banner */}
       {error && (
