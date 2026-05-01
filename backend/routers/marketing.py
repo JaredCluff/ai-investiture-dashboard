@@ -14,7 +14,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends
 
-from routers.paperclip import _require_read_auth
+from routers.paperclip import _require_board_auth
 
 router = APIRouter(tags=["marketing"])
 
@@ -34,7 +34,7 @@ def _load_queue() -> dict:
 
 @router.get("/marketing/queue")
 async def get_marketing_queue(
-    _: None = Depends(_require_read_auth),
+    _: None = Depends(_require_board_auth),
 ) -> dict:
     """Return scheduled social posts sorted by date."""
     data = _load_queue()
@@ -50,7 +50,7 @@ async def get_marketing_queue(
 
 @router.get("/marketing/config")
 async def get_marketing_config(
-    _: None = Depends(_require_read_auth),
+    _: None = Depends(_require_board_auth),
 ) -> dict:
     """Return brand config metadata."""
     data = _load_queue()

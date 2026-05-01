@@ -8,13 +8,14 @@ No cookies. No IPs. No user agents. Records only:
   - UTC date (YYYY-MM-DD — day granularity only)
 
 Storage: append-only JSONL at /data/logs/analytics.jsonl
-Stats endpoint requires board auth (DASHBOARD_API_KEY or AGENT_READ_TOKEN).
+Stats endpoint requires board auth (DASHBOARD_API_KEY via X-API-Key header).
 Hit endpoint is public — called by the beacon script in index.html.
 """
 
 import json
 import os
-from collections import Counter, defaultdict
+import time
+from collections import Counter, defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -54,6 +55,24 @@ def _screen_category(width: int | None) -> str:
 _ERROR_LOG_PATH = _LOG_PATH.parent / "errors.jsonl"
 _MAX_MSG_LEN = 200
 
+# In-process sliding-window rate limiter for public endpoints
+_RATE_WINDOW = 60  # seconds
+_HIT_MAX = 60      # requests per IP per minute for /analytics/hit
+_ERROR_MAX = 30    # requests per IP per minute for /errors
+_hit_rate: dict[str, deque] = defaultdict(deque)
+_error_rate: dict[str, deque] = defaultdict(deque)
+
+
+def _check_rate(store: dict, ip: str, limit: int) -> bool:
+    now = time.monotonic()
+    dq = store[ip]
+    while dq and dq[0] < now - _RATE_WINDOW:
+        dq.popleft()
+    if len(dq) >= limit:
+        return False
+    dq.append(now)
+    return True
+
 
 class HitPayload(BaseModel):
     path: str = "/"
@@ -71,6 +90,10 @@ class ErrorPayload(BaseModel):
 @router.post("/analytics/hit")
 async def record_hit(payload: HitPayload, request: Request) -> JSONResponse:
     """Record a pageview. Public endpoint — no auth required."""
+    ip = (request.client.host if request.client else "unknown")
+    if not _check_rate(_hit_rate, ip, _HIT_MAX):
+        return JSONResponse({"ok": False}, status_code=429)
+
     # Sanitise inputs — no PII, no large strings
     path = payload.path[:_MAX_PATH_LEN] if payload.path else "/"
     ref = payload.referrer[:_MAX_REF_LEN] if payload.referrer else ""
@@ -85,12 +108,16 @@ async def record_hit(payload: HitPayload, request: Request) -> JSONResponse:
     except OSError:
         pass  # Silently swallow write errors — never break the page for analytics
 
-    return JSONResponse({"ok": True}, status_code=204)
+    return JSONResponse({"ok": True})
 
 
 @router.post("/errors")
 async def record_error(payload: ErrorPayload, request: Request) -> JSONResponse:
     """Record a frontend fetch error. Public endpoint — no auth required."""
+    ip = (request.client.host if request.client else "unknown")
+    if not _check_rate(_error_rate, ip, _ERROR_MAX):
+        return JSONResponse({"ok": False}, status_code=429)
+
     path = payload.path[:_MAX_PATH_LEN] if payload.path else "/"
     message = payload.message[:_MAX_MSG_LEN] if payload.message else ""
     screen = payload.screen if payload.screen in ("mobile", "tablet", "desktop") else "unknown"
@@ -104,7 +131,7 @@ async def record_error(payload: ErrorPayload, request: Request) -> JSONResponse:
     except OSError:
         pass
 
-    return JSONResponse({"ok": True}, status_code=204)
+    return JSONResponse({"ok": True})
 
 
 @router.get("/errors")
