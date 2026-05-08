@@ -66,39 +66,37 @@ async def get_bars(
         if cached:
             return cached
 
-    timeframe_str, delta = TIMEFRAME_MAP.get(period, ("1Day", timedelta(days=30)))
-    end = datetime.now(timezone.utc)
-    start = end - delta
+        timeframe_str, delta = TIMEFRAME_MAP.get(period, ("1Day", timedelta(days=30)))
+        end = datetime.now(timezone.utc)
+        start = end - delta
+        ttl = 300 if period == "1D" else 3600
 
-    ttl = 300 if period == "1D" else 3600
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                resp = await client.get(
+                    f"{ALPACA_DATA_URL}/v2/stocks/{symbol}/bars",
+                    headers=_auth(),
+                    params={
+                        "timeframe": timeframe_str,
+                        "start": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "end": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "limit": 500,
+                        "feed": "iex",
+                        "adjustment": "all",
+                    },
+                )
+                resp.raise_for_status()
+                bars = resp.json().get("bars") or []
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=502, detail=str(e))
 
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
-                f"{ALPACA_DATA_URL}/v2/stocks/{symbol}/bars",
-                headers=_auth(),
-                params={
-                    "timeframe": timeframe_str,
-                    "start": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "end": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "limit": 500,
-                    "feed": "iex",
-                    "adjustment": "all",
-                },
-            )
-            resp.raise_for_status()
-            bars = resp.json().get("bars") or []
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=502, detail=str(e))
-
-    result = {
-        "symbol": symbol,
-        "period": period,
-        "bars": [
-            {"t": b["t"], "o": b["o"], "h": b["h"], "l": b["l"], "c": b["c"], "v": b["v"]}
-            for b in bars
-        ],
-    }
-    async with _bars_lock:
+        result = {
+            "symbol": symbol,
+            "period": period,
+            "bars": [
+                {"t": b["t"], "o": b["o"], "h": b["h"], "l": b["l"], "c": b["c"], "v": b["v"]}
+                for b in bars
+            ],
+        }
         _set_cache(cache_key, result, ttl)
     return result

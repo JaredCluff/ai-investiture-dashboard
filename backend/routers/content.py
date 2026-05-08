@@ -114,7 +114,7 @@ async def list_research():
         for agent_dir in AGENTS_DIR.iterdir():
             if agent_dir.is_dir():
                 role = agent_dir.name
-                for md_file in agent_dir.glob("AII-*.md"):
+                for md_file in agent_dir.rglob("AII-*.md"):
                     parsed = parse_research_file(md_file, role)
                     if parsed:
                         reports.append(parsed)
@@ -131,7 +131,7 @@ async def index_all_research():
     if AGENTS_DIR.exists():
         for agent_dir in AGENTS_DIR.iterdir():
             if agent_dir.is_dir():
-                for md_file in agent_dir.glob("AII-*.md"):
+                for md_file in agent_dir.rglob("AII-*.md"):
                     parsed = parse_research_file(md_file, agent_dir.name)
                     if parsed:
                         try:

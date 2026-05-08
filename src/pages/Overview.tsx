@@ -15,6 +15,7 @@ import {
 } from 'recharts'
 import { usePoll } from '../hooks/usePoll'
 import SymbolTooltip from '../components/SymbolTooltip'
+import Disclaimer from '../components/Disclaimer'
 
 interface Portfolio {
   equity: number
@@ -307,6 +308,8 @@ export default function Overview() {
           </span>
         )}
       </div>
+
+      <Disclaimer variant="banner" />
 
       {/* Error banner */}
       {error && (

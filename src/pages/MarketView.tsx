@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { apiFetch } from '../lib/api'
 import SymbolTooltip from '../components/SymbolTooltip'
+import Disclaimer from '../components/Disclaimer'
 import {
   ResponsiveContainer,
   AreaChart,
@@ -173,6 +174,8 @@ export default function MarketView() {
           </span>
         )}
       </div>
+
+      <Disclaimer variant="banner" />
 
       {/* Symbol selector */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3">

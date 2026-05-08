@@ -11,10 +11,8 @@ services:
       - /Users/jared.cluff/.ai-investiture/.env
     environment:
       PAPERCLIP_URL: "http://host.containers.internal:3100"
-      PAPERCLIP_TOKEN: "${PAPERCLIP_TOKEN}"
       PAPERCLIP_COMPANY_ID: "6299465e-f976-4dac-ba3d-a4dfb32f1a06"
       KN_RETRIEVAL_URL: "http://host.containers.internal:8003"
-      KN_INTERNAL_SERVICE_TOKEN: "${KN_INTERNAL_SERVICE_TOKEN}"
     volumes:
       # :ro — read-only mounts; container cannot write back to host filesystem
       - /Users/jared.cluff/.ai-investiture/agents:/data/agents:ro
