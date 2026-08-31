@@ -83,6 +83,11 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
     return meta, body
 
 
+def _parse_tags(raw: str) -> list[str]:
+    """Split tag string into list, handling both 'a, b' and YAML '[a, b]' syntax."""
+    return [t.strip() for t in raw.strip().strip("[]").split(",") if t.strip()]
+
+
 async def _index_to_kn(title: str, content: str, source: str, metadata: dict) -> None:
     """Index a document into Knowledge Nexus. Intended to be called via asyncio.create_task — never awaited directly from GET endpoints."""
     if not KN_INTERNAL_SERVICE_TOKEN:
@@ -212,7 +217,7 @@ async def list_blog():
                     "title": title,
                     "date": meta.get("date"),
                     "author": meta.get("author", "Portfolio Manager"),
-                    "tags": [t.strip() for t in meta.get("tags", "").split(",") if t.strip()],
+                    "tags": _parse_tags(meta.get("tags", "")),
                     "summary": meta.get("summary") or body[:200],
                 })
             except Exception:
@@ -238,7 +243,7 @@ async def get_blog_post(slug: str):
                     "slug": safe_slug,
                     "date": meta.get("date"),
                     "author": meta.get("author", "Portfolio Manager"),
-                    "tags": [t.strip() for t in meta.get("tags", "").split(",") if t.strip()],
+                    "tags": _parse_tags(meta.get("tags", "")),
                 },
             ))
             return {
@@ -246,7 +251,7 @@ async def get_blog_post(slug: str):
                 "title": meta.get("title", safe_slug),
                 "date": meta.get("date"),
                 "author": meta.get("author", "Portfolio Manager"),
-                "tags": [t.strip() for t in meta.get("tags", "").split(",") if t.strip()],
+                "tags": _parse_tags(meta.get("tags", "")),
                 "content": body,
             }
     raise HTTPException(status_code=404, detail="Post not found")
