@@ -26,8 +26,8 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-@router.get("/status")
-async def get_status(_: None = Depends(_require_board_auth)):
+@router.get("/alpaca/status")
+async def get_alpaca_status(_: None = Depends(_require_board_auth)):
     cache_key = "alpaca:status"
     cached = alpaca_cache.get(cache_key)
     if cached is not None:
